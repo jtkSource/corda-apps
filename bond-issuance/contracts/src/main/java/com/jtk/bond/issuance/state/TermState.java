@@ -30,11 +30,8 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
     private final Party issuer; // Issuer of the bond
     private final List<Party> investors; // the investors who brought the bond
     private final String bondState; // state of the bond
-
     private final String bondName; // Name of bond cannot be changed
-
-    private Currency currency;
-    private final String investmentPurpose;
+    private final Currency currency;
     private final int couponPaymentLeft; // number of coupon payments left
     private final double interestRate; // current interest rate for the bonds
     private final double purchasePrice; // current price of the bond
@@ -42,14 +39,13 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
     private final BondCreditRating creditRating; // credit rating of the bond
     private final int unitsAvailable; // number of units available - reduces with every bond that is brought
     private final int redemptionAvailable; // number of units that have to be redeemed - increased with every bond brought
-
     private final BondType bondType;
     private final UniqueIdentifier linearId; // identifier of the bond
 
     final DateTimeFormatter locateDateformat = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     public TermState(Party issuer, List<Party> investors, String bondName, String bondState,
-                     String bondType, String currency, String investmentPurpose,
+                     String bondType, String currency,
                      int couponPaymentLeft, double interestRate, double purchasePrice, String maturityDate,
                      String creditRating, int unitsAvailable, int redemptionAvailable, UniqueIdentifier linearId) {
         this.issuer = issuer;
@@ -58,7 +54,6 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         this.bondType = BondType.lookupRating(bondType).orElse(BondType.NA);
         this.bondName = bondName;
         this.currency = Currency.getInstance(currency);
-        this.investmentPurpose = investmentPurpose;
         this.couponPaymentLeft = couponPaymentLeft;
         this.interestRate = interestRate;
         this.purchasePrice = purchasePrice;
@@ -79,11 +74,11 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         return ImmutableList.of(issuer);
     }
 
-
     @Override
     public UniqueIdentifier getLinearId() {
         return this.linearId;
     }
+
 
     public Party getIssuer() {
         return issuer;
@@ -95,10 +90,6 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
 
     public String getBondState() {
         return bondState;
-    }
-
-    public String getInvestmentPurpose() {
-        return investmentPurpose;
     }
 
     public int getCouponPaymentLeft() {
