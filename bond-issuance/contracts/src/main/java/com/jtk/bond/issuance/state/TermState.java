@@ -136,11 +136,33 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
 
     /* This method returns a TokenPointer by using the linear Id of the evolvable state */
     public TokenPointer<TermState> toPointer(){
-        LinearPointer<TermState> linearPointer = new LinearPointer<>(linearId, TermState.class);
-        TokenPointer<TermState> stockStateTokenPointer = new TokenPointer<>(linearPointer, fractionDigits);
-        return stockStateTokenPointer;
+        return new TokenPointer<>(new LinearPointer<>(linearId, TermState.class), fractionDigits);
     }
 
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        TermState termState = (TermState) o;
+
+        if (!issuer.equals(termState.issuer)) return false;
+        if (!bondName.equals(termState.bondName)) return false;
+        if (!currency.equals(termState.currency)) return false;
+        if (bondType != termState.bondType) return false;
+        return linearId.equals(termState.linearId);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = issuer.hashCode();
+        result = 31 * result + bondName.hashCode();
+        result = 31 * result + currency.hashCode();
+        result = 31 * result + bondType.hashCode();
+        result = 31 * result + linearId.hashCode();
+        return result;
+    }
 
     @Override
     public String toString() {

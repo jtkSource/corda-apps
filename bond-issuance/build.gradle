@@ -14,8 +14,10 @@ buildscript {
         guava_version = constants.getProperty("guavaVersion")
 
         //token dependency
-        tokens_release_group = 'com.r3.corda.lib.tokens'
-        tokens_release_version = '1.2'
+        tokens_release_group = constants.getProperty("tokensReleaseGroup")
+        tokens_release_version = constants.getProperty("tokensReleaseVersion")
+        confidential_id_release_version = constants.getProperty("confidentialIdReleaseVersion")
+        confidential_id_release_group = constants.getProperty("confidentialIdReleaseGroup")
     }
 
     repositories {
@@ -45,6 +47,7 @@ allprojects {
         maven { url 'https://jitpack.io' }
         //SDK lib
         maven { url 'https://software.r3.com/artifactory/corda-lib' }
+        maven { url 'https://software.r3.com/artifactory/corda-lib-dev' }
         //Gradle Plugins
         maven { url 'https://repo.gradle.org/gradle/libs-releases' }
     }
@@ -57,6 +60,7 @@ allprojects {
         // This makes the JAR's SHA-256 hash repeatable.
         preserveFileTimestamps = false
         reproducibleFileOrder = true
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         baseName "bond-issuance-${project.name}"
     }
 }
@@ -93,8 +97,11 @@ dependencies {
     cordaDriver "net.corda:corda-shell:4.9"
 
     // Token SDK dependencies.
+//    cordapp "$confidential_id_release_group:ci-workflows:$confidential_id_release_version"
     cordapp "$tokens_release_group:tokens-contracts:$tokens_release_version"
     cordapp "$tokens_release_group:tokens-workflows:$tokens_release_version"
+//    cordapp "$tokens_release_group:tokens-money:$tokens_release_version"
+//    cordapp "$tokens_release_group:tokens-selection:$tokens_release_version"
 }
 
 task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
