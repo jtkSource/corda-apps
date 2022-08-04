@@ -33,34 +33,34 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
     private final List<Party> investors; // the investors who brought the bond
     private final String bondState; // state of the bond
     private final String bondName; // Name of bond cannot be changed
-    private final Currency currency;
+
+    private final String currency;
     private final int couponPaymentLeft; // number of coupon payments left
     private final double interestRate; // current interest rate for the bonds
     private final double purchasePrice; // current price of the bond
-    private final LocalDate maturityDate; // Maturity date of the bond
-    private final BondCreditRating creditRating; // credit rating of the bond
+    private final String maturityDate; // Maturity date of the bond
+
+    private final String creditRating; // credit rating of the bond
     private final int unitsAvailable; // number of units available - reduces with every bond that is brought
     private final int redemptionAvailable; // number of units that have to be redeemed - increased with every bond brought
-    private final BondType bondType;
+    private final String bondType;
     private final UniqueIdentifier linearId; // identifier of the bond
 
-    final DateTimeFormatter locateDateformat = DateTimeFormatter.ofPattern("yyyyMMdd");
-
     public TermState(Party issuer, List<Party> investors, String bondName, String bondState,
-                     String bondType, String currency,
-                     int couponPaymentLeft, double interestRate, double purchasePrice, String maturityDate,
-                     String creditRating, int unitsAvailable, int redemptionAvailable, UniqueIdentifier linearId) {
+                     int couponPaymentLeft, double interestRate, double purchasePrice,
+                     int unitsAvailable, int redemptionAvailable, UniqueIdentifier linearId,
+                     String maturityDate, String bondType, String currency, String creditRating) {
         this.issuer = issuer;
         this.investors = investors;
         this.bondState = bondState;
-        this.bondType = BondType.lookupRating(bondType).orElse(BondType.NA);
+        this.bondType = bondType;
         this.bondName = bondName;
-        this.currency = Currency.getInstance(currency);
+        this.currency = currency;
         this.couponPaymentLeft = couponPaymentLeft;
         this.interestRate = interestRate;
         this.purchasePrice = purchasePrice;
-        this.maturityDate = LocalDate.parse(maturityDate, locateDateformat);
-        this.creditRating = BondCreditRating.lookupRating(creditRating).orElse(BondCreditRating.NA);
+        this.maturityDate = maturityDate;
+        this.creditRating = creditRating;
         this.unitsAvailable = unitsAvailable;
         this.redemptionAvailable = redemptionAvailable;
         this.linearId = linearId;
@@ -106,14 +106,6 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         return purchasePrice;
     }
 
-    public LocalDate getMaturityDate() {
-        return maturityDate;
-    }
-
-    public BondCreditRating getCreditRating() {
-        return creditRating;
-    }
-
     public int getUnitsAvailable() {
         return unitsAvailable;
     }
@@ -122,16 +114,25 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         return redemptionAvailable;
     }
 
-    public BondType getBondType() {
-        return bondType;
-    }
 
     public String getBondName() {
         return bondName;
     }
 
-    public Currency getCurrency() {
+    public String getBondType() {
+        return bondType;
+    }
+
+    public String getMaturityDate() {
+        return maturityDate;
+    }
+
+    public String getCurrency() {
         return currency;
+    }
+
+    public String getCreditRating() {
+        return creditRating;
     }
 
     /* This method returns a TokenPointer by using the linear Id of the evolvable state */
@@ -149,8 +150,6 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
 
         if (!issuer.equals(termState.issuer)) return false;
         if (!bondName.equals(termState.bondName)) return false;
-        if (!currency.equals(termState.currency)) return false;
-        if (bondType != termState.bondType) return false;
         return linearId.equals(termState.linearId);
     }
 
@@ -158,8 +157,6 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
     public int hashCode() {
         int result = issuer.hashCode();
         result = 31 * result + bondName.hashCode();
-        result = 31 * result + currency.hashCode();
-        result = 31 * result + bondType.hashCode();
         result = 31 * result + linearId.hashCode();
         return result;
     }
@@ -168,18 +165,17 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
     public String toString() {
         final StringBuilder sb = new StringBuilder("TermState{");
         sb.append("issuer=").append(issuer);
-        sb.append(", investors=").append(investors);
         sb.append(", bondState='").append(bondState).append('\'');
         sb.append(", bondName='").append(bondName).append('\'');
-        sb.append(", currency=").append(currency);
+        sb.append(", currency='").append(currency).append('\'');
         sb.append(", couponPaymentLeft=").append(couponPaymentLeft);
         sb.append(", interestRate=").append(interestRate);
         sb.append(", purchasePrice=").append(purchasePrice);
-        sb.append(", maturityDate=").append(maturityDate);
-        sb.append(", creditRating=").append(creditRating);
+        sb.append(", maturityDate='").append(maturityDate).append('\'');
+        sb.append(", creditRating='").append(creditRating).append('\'');
         sb.append(", unitsAvailable=").append(unitsAvailable);
         sb.append(", redemptionAvailable=").append(redemptionAvailable);
-        sb.append(", bondType=").append(bondType);
+        sb.append(", bondType='").append(bondType).append('\'');
         sb.append(", linearId=").append(linearId);
         sb.append('}');
         return sb.toString();

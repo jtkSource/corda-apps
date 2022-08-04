@@ -36,8 +36,6 @@ buildscript {
 
 allprojects {
     apply plugin: 'java'
-    apply plugin: 'idea'
-    apply plugin: 'maven-publish'
 
     repositories {
         mavenLocal()
@@ -60,8 +58,7 @@ allprojects {
         // This makes the JAR's SHA-256 hash repeatable.
         preserveFileTimestamps = false
         reproducibleFileOrder = true
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        baseName "bond-issuance-${project.name}"
+        //baseName "bond-issuance-${project.name}"
     }
 }
 
@@ -113,7 +110,7 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         cordapp("$tokens_release_group:tokens-workflows:$tokens_release_version")
         cordapp project(':contracts')
         cordapp project(':workflows')
-	runSchemaMigration = true
+	    runSchemaMigration = true
     }
     node {
         name "CN=SGX Notary,OU=Notary,O=SGX,L=Singapore,C=SG"
@@ -143,7 +140,7 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         }
         rpcUsers = [[ user: "hsbc1", "password": "test", "permissions": ["ALL"]]]
     }
-    node {
+    /*node {
         name "CN=Central Bank,OU=CBDC,O=Central Bank,L=Singapore,C=SG"
         p2pPort 10012
         rpcSettings {
@@ -151,7 +148,7 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
             adminAddress("localhost:10043")
         }
         rpcUsers = [[ user: "cb1", "password": "test", "permissions": ["ALL"]]]
-    }
+    }*/
     node {
         name "CN=MAS,OU=Observer,O=MAS,L=Singapore,C=SG"
         p2pPort 10015
