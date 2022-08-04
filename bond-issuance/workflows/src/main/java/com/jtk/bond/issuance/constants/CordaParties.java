@@ -1,5 +1,8 @@
 package com.jtk.bond.issuance.constants;
 
+import net.corda.core.serialization.CordaSerializable;
+
+@CordaSerializable
 public enum CordaParties {
     NOTARY("CN=SGX Notary,OU=Notary,O=SGX,L=Singapore,C=SG"),
     OBSERVER("CN=MAS,OU=Observer,O=MAS,L=Singapore,C=SG"),

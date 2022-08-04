@@ -1,9 +1,12 @@
 package com.jtk.bond.issuance.contract.contants;
 
+import net.corda.core.serialization.CordaSerializable;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Optional;
 
+@CordaSerializable
 public enum BondCreditRating {
     AAA("AAA"),
     AA_PLUS("AA+"),
