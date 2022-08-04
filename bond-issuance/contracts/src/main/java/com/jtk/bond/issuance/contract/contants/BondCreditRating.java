@@ -1,4 +1,4 @@
-package com.jtk.bond.contants;
+package com.jtk.bond.issuance.contract.contants;
 
 import java.util.Arrays;
 import java.util.HashMap;

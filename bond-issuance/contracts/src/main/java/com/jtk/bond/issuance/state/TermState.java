@@ -1,8 +1,8 @@
 package com.jtk.bond.issuance.state;
 
 import com.google.common.collect.ImmutableList;
-import com.jtk.bond.contants.BondCreditRating;
-import com.jtk.bond.contants.BondType;
+import com.jtk.bond.issuance.contract.contants.BondCreditRating;
+import com.jtk.bond.issuance.contract.contants.BondType;
 import com.jtk.bond.issuance.contract.TermContract;
 import com.r3.corda.lib.tokens.contracts.states.EvolvableTokenType;
 import com.r3.corda.lib.tokens.contracts.types.TokenPointer;
@@ -11,6 +11,7 @@ import net.corda.core.contracts.LinearPointer;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.Party;
 import net.corda.core.schemas.StatePersistable;
+import net.corda.core.serialization.CordaSerializable;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -24,6 +25,7 @@ import java.util.List;
  * - The request will generate a BondState which has a copy of the terms and is shared with the Issuer
  * and the Investor
  */
+@CordaSerializable
 @BelongsToContract(TermContract.class)
 public class TermState extends EvolvableTokenType implements StatePersistable {
     private final int fractionDigits = 0;
@@ -140,4 +142,24 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
     }
 
 
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("TermState{");
+        sb.append("issuer=").append(issuer);
+        sb.append(", investors=").append(investors);
+        sb.append(", bondState='").append(bondState).append('\'');
+        sb.append(", bondName='").append(bondName).append('\'');
+        sb.append(", currency=").append(currency);
+        sb.append(", couponPaymentLeft=").append(couponPaymentLeft);
+        sb.append(", interestRate=").append(interestRate);
+        sb.append(", purchasePrice=").append(purchasePrice);
+        sb.append(", maturityDate=").append(maturityDate);
+        sb.append(", creditRating=").append(creditRating);
+        sb.append(", unitsAvailable=").append(unitsAvailable);
+        sb.append(", redemptionAvailable=").append(redemptionAvailable);
+        sb.append(", bondType=").append(bondType);
+        sb.append(", linearId=").append(linearId);
+        sb.append('}');
+        return sb.toString();
+    }
 }

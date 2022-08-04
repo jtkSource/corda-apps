@@ -1,7 +1,7 @@
 package com.jtk.bond.issuance.contract;
 
-import com.jtk.bond.contants.BondCreditRating;
-import com.jtk.bond.contants.BondType;
+import com.jtk.bond.issuance.contract.contants.BondCreditRating;
+import com.jtk.bond.issuance.contract.contants.BondType;
 import com.jtk.bond.issuance.state.TermState;
 import com.r3.corda.lib.tokens.contracts.EvolvableTokenContract;
 import net.corda.core.contracts.Contract;

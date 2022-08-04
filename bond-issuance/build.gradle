@@ -109,7 +109,7 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
 	runSchemaMigration = true
     }
     node {
-        name "O=Notary,L=London,C=GB"
+        name "CN=SGX Notary,OU=Notary,O=SGX,L=Singapore,C=SG"
         notary = [validating : false]
         p2pPort 10002
         rpcSettings {
@@ -119,22 +119,22 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         cordapps = []
     }
     node {
-        name "CN=Goldman Sachs,OU=CBDC,O=Goldman Sachs,L=New York,C=US"
+        name "CN=Goldman Sachs,OU=Bank,O=Goldman Sachs,L=New York,C=US"
         p2pPort 10005
         rpcSettings {
             address("localhost:10006")
             adminAddress("localhost:10036")
         }
-        rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
+        rpcUsers = [[ user: "gs1", "password": "test", "permissions": ["ALL"]]]
     }
     node {
-        name "CN=HSBC,OU=CBDC,O=HSBC,L=London,C=GB"
+        name "CN=HSBC,OU=Bank,O=HSBC,L=London,C=GB"
         p2pPort 10008
         rpcSettings {
             address("localhost:10009")
             adminAddress("localhost:10039")
         }
-        rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
+        rpcUsers = [[ user: "hsbc1", "password": "test", "permissions": ["ALL"]]]
     }
     node {
         name "CN=Central Bank,OU=CBDC,O=Central Bank,L=Singapore,C=SG"
@@ -143,16 +143,16 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
             address("localhost:10013")
             adminAddress("localhost:10043")
         }
-        rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
+        rpcUsers = [[ user: "cb1", "password": "test", "permissions": ["ALL"]]]
     }
     node {
-        name "O=Observer,L=Washington DC,C=US"
+        name "CN=MAS,OU=Observer,O=MAS,L=Singapore,C=SG"
         p2pPort 10015
         rpcSettings {
             address("localhost:10016")
             adminAddress("localhost:10046")
         }
-        rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
+        rpcUsers = [[ user: "mas1", "password": "test", "permissions": ["ALL"]]]
     }
 }
 
