@@ -28,4 +28,64 @@ public class QueryBondTerms {
             return CustomQuery.queryTermsPointerByCurrency(currency, getServiceHub()).toString();
         }
     }
+
+    @InitiatingFlow
+    @StartableByRPC
+    public static class GetBondByRating extends FlowLogic<String>{
+        private final ProgressTracker progressTracker = new ProgressTracker();
+        private final String creditRating;
+
+        public GetBondByRating(String creditRating) {
+            this.creditRating = creditRating;
+        }
+        @Override
+        public ProgressTracker getProgressTracker() {
+            return progressTracker;
+        }
+        @Override
+        @Suspendable
+        public String call() {
+            return CustomQuery.queryTermsPointerByCreditRating(creditRating, getServiceHub()).toString();
+        }
+    }
+
+    @InitiatingFlow
+    @StartableByRPC
+    public static class GetBondLessThanMaturityDate extends FlowLogic<String>{
+        private final ProgressTracker progressTracker = new ProgressTracker();
+        private final String maturityDate;
+
+        public GetBondLessThanMaturityDate(String maturityDate) {
+            this.maturityDate = maturityDate;
+        }
+        @Override
+        public ProgressTracker getProgressTracker() {
+            return progressTracker;
+        }
+        @Override
+        @Suspendable
+        public String call() {
+            return CustomQuery.queryTermsPointerLessThanMaturityDate(maturityDate, getServiceHub()).toString();
+        }
+    }
+
+    @InitiatingFlow
+    @StartableByRPC
+    public static class GetBondGreaterThanMaturityDate extends FlowLogic<String>{
+        private final ProgressTracker progressTracker = new ProgressTracker();
+        private final String maturityDate;
+
+        public GetBondGreaterThanMaturityDate(String maturityDate) {
+            this.maturityDate = maturityDate;
+        }
+        @Override
+        public ProgressTracker getProgressTracker() {
+            return progressTracker;
+        }
+        @Override
+        @Suspendable
+        public String call() {
+            return CustomQuery.queryTermsPointerGreaterThanMaturityDate(maturityDate, getServiceHub()).toString();
+        }
+    }
 }
