@@ -48,17 +48,19 @@ public class TermContract extends EvolvableTokenContract implements Contract {
             req.using("Bond Interest rate payment cannot be less than 0",(createdTerm.getInterestRate() >= 0.0));
             req.using("Bond Interest purchase price cannot be less than 0",(createdTerm.getPurchasePrice() >= 0.0));
             req.using("Bond maturity date cannot be null", (createdTerm.getMaturityDate()!=null));
+            LocalDate date = LocalDate.now();
             try {
-                LocalDate date = LocalDate.parse(createdTerm.getMaturityDate(), locateDateformat);
-                req.using("Bond maturity date must be greater than a 30 days",
-                        (date.isAfter(LocalDate.now().plusDays(30))));
+                date = LocalDate.parse(createdTerm.getMaturityDate(), locateDateformat);
             }catch (Exception e){
-                req.using("Maturity date format shoud be yyyyMMdd", false);
+                req.using("Maturity date format should be yyyyMMdd", false);
             }
+            req.using("Bond maturity date must be greater than a 30 days",
+                    (date.isAfter(LocalDate.now().plusDays(30))));
             req.using("Bond Credit rating cannot be empty or NA ",
-                    (createdTerm.getCreditRating() != null) && BondCreditRating.valueOf(createdTerm.getCreditRating()) != BondCreditRating.NA);
+                    (createdTerm.getCreditRating() != null) &&
+                            BondCreditRating.lookupRating(createdTerm.getCreditRating()).orElse(BondCreditRating.NA) != BondCreditRating.NA);
             req.using("Bond type cannot be empty or NA ",
-                    (createdTerm.getBondType() != null) && BondType.valueOf(createdTerm.getBondType()) != BondType.NA);
+                    (createdTerm.getBondType() != null) && BondType.lookup(createdTerm.getBondType()).orElse(BondType.NA) != BondType.NA);
             req.using("Bond Units Available cannot be zero when created", createdTerm.getUnitsAvailable() > 0);
             req.using("Bond redemption value should be zero on create ", createdTerm.getRedemptionAvailable() == 0);
 

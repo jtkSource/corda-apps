@@ -20,7 +20,7 @@ public enum BondType {
                     lookup.put(bondType.value, bondType);
                 });
     }
-    public static Optional<BondType> lookupRating(String bondType){
+    public static Optional<BondType> lookup(String bondType){
         return Optional.ofNullable(lookup.get(bondType));
     }
     private String value;
