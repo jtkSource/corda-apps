@@ -58,7 +58,7 @@ allprojects {
         // This makes the JAR's SHA-256 hash repeatable.
         preserveFileTimestamps = false
         reproducibleFileOrder = true
-        //baseName "bond-issuance-${project.name}"
+        baseName "bond-issuance-${project.name}"
     }
 }
 
