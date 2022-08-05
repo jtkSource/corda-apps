@@ -1,6 +1,6 @@
 package com.jtk.bond.issuance.flows.utils;
 
-import com.jtk.bond.issuance.contract.contants.BondState;
+import com.jtk.bond.issuance.contract.contants.BondStatus;
 import com.jtk.bond.issuance.state.TermState;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.node.ServiceHub;
@@ -19,7 +19,7 @@ public class CustomQuery {
                 .map(sr->sr.getState().getData().toPointer(TermState.class))
                 .map(p->p.getPointer().resolve(serviceHub).getState().getData())
                 .filter(ts-> ts.getCurrency().equals(currency) &&
-                        ts.getBondState().equals(BondState.ACTIVE.name()))
+                        ts.getBondStatus().equals(BondStatus.ACTIVE.name()))
                 .collect(Collectors.toList());
     }
 
@@ -29,7 +29,7 @@ public class CustomQuery {
                 .map(sr->sr.getState().getData().toPointer(TermState.class))
                 .map(p->p.getPointer().resolve(serviceHub).getState().getData())
                 .filter(ts-> ts.getCreditRating().equals(rating) &&
-                        ts.getBondState().equals(BondState.ACTIVE.name()))
+                        ts.getBondStatus().equals(BondStatus.ACTIVE.name()))
                 .collect(Collectors.toList());
     }
 
@@ -38,7 +38,7 @@ public class CustomQuery {
         return statesAndRef.stream()
                 .map(sr->sr.getState().getData().toPointer(TermState.class))
                 .map(p->p.getPointer().resolve(serviceHub).getState().getData())
-                .filter(ts-> ts.getBondState().equals(BondState.ACTIVE.name()))
+                .filter(ts-> ts.getBondStatus().equals(BondStatus.ACTIVE.name()))
                 .filter(ts-> {
                     LocalDate termMaturityDate = LocalDate.parse(ts.getMaturityDate(), locateDateformat);
                     LocalDate queryMaturityDate = LocalDate.parse(maturityDate, locateDateformat);
@@ -51,7 +51,7 @@ public class CustomQuery {
         return statesAndRef.stream()
                 .map(sr->sr.getState().getData().toPointer(TermState.class))
                 .map(p->p.getPointer().resolve(serviceHub).getState().getData())
-                .filter(ts-> ts.getBondState().equals(BondState.ACTIVE.name()))
+                .filter(ts-> ts.getBondStatus().equals(BondStatus.ACTIVE.name()))
                 .filter(ts-> {
                     LocalDate termMaturityDate = LocalDate.parse(ts.getMaturityDate(), locateDateformat);
                     LocalDate queryMaturityDate = LocalDate.parse(maturityDate, locateDateformat);

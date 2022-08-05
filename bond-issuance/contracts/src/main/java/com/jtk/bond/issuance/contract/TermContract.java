@@ -42,27 +42,27 @@ public class TermContract extends EvolvableTokenContract implements Contract {
     public void additionalCreateChecks(LedgerTransaction tx) {
         TermState createdTerm = tx.outputsOfType(TermState.class).get(0);
         requireThat(req->{
-            req.using("Bond Issuer cannot be empty", (createdTerm.getIssuer()!=null));
-            req.using("Bond State cannot be empty", (!createdTerm.getBondState().isEmpty()));
-            req.using("Bond Coupon payment left cannot be zero", (createdTerm.getCouponPaymentLeft()!=0));
-            req.using("Bond Interest rate payment cannot be less than 0",(createdTerm.getInterestRate() >= 0.0));
-            req.using("Bond Interest purchase price cannot be less than 0",(createdTerm.getPurchasePrice() >= 0.0));
-            req.using("Bond maturity date cannot be null", (createdTerm.getMaturityDate()!=null));
-            LocalDate date = LocalDate.now();
+            req.using("BondTerm Issuer cannot be empty", (createdTerm.getIssuer()!=null));
+            req.using("BondTerm State cannot be empty", (!createdTerm.getBondStatus().isEmpty()));
+            req.using("BondTerm Coupon payment left cannot be less than zero", (createdTerm.getCouponPaymentLeft()>=0));
+            req.using("BondTerm Interest rate payment cannot be less than 0",(createdTerm.getInterestRate() >= 0.0));
+            req.using("BondTerm Interest purchase price cannot be less than 0",(createdTerm.getPurchasePrice() >= 0.0));
+            req.using("BondTerm maturity date cannot be null", (createdTerm.getMaturityDate()!=null));
+            LocalDate date = null;
             try {
                 date = LocalDate.parse(createdTerm.getMaturityDate(), locateDateformat);
             }catch (Exception e){
                 req.using("Maturity date format should be yyyyMMdd", false);
             }
-            req.using("Bond maturity date must be greater than a 30 days",
+            req.using("BondTerm maturity date must be greater than a 30 days",
                     (date.isAfter(LocalDate.now().plusDays(30))));
-            req.using("Bond Credit rating cannot be empty or NA ",
+            req.using("BondTerm Credit rating cannot be empty or NA ",
                     (createdTerm.getCreditRating() != null) &&
                             BondCreditRating.lookupRating(createdTerm.getCreditRating()).orElse(BondCreditRating.NA) != BondCreditRating.NA);
-            req.using("Bond type cannot be empty or NA ",
+            req.using("BondTerm type cannot be empty or NA ",
                     (createdTerm.getBondType() != null) && BondType.lookup(createdTerm.getBondType()).orElse(BondType.NA) != BondType.NA);
-            req.using("Bond Units Available cannot be zero when created", createdTerm.getUnitsAvailable() > 0);
-            req.using("Bond redemption value should be zero on create ", createdTerm.getRedemptionAvailable() == 0);
+            req.using("BondTerm Units Available cannot be zero when created", createdTerm.getUnitsAvailable() > 0);
+            req.using("BondTerm redemption value should be zero on create ", createdTerm.getRedemptionAvailable() == 0);
 
             return null;
         });
@@ -74,10 +74,16 @@ public class TermContract extends EvolvableTokenContract implements Contract {
         TermState outputTermState = tx.outputsOfType(TermState.class).get(0);
         requireThat(req-> {
             //Validations when a bond Term is updated
-            req.using("Bond Issuer cannot be changed", inputTermState.getIssuer().equals(outputTermState.getIssuer()));
-            req.using("Bond Currency must not be changed.", inputTermState.getCurrency().equals(outputTermState.getCurrency()));
-            req.using("Stock Name must not be changed.", inputTermState.getBondName().equals(outputTermState.getBondName()));
-            req.using("Bond FractionDigits must not be changed.", inputTermState.getFractionDigits() == outputTermState.getFractionDigits());
+            req.using("BondTerm Issuer cannot be changed", inputTermState.getIssuer().equals(outputTermState.getIssuer()));
+            req.using("BondTerm Currency must not be changed.", inputTermState.getCurrency().equals(outputTermState.getCurrency()));
+            req.using("BondTerm Name must not be changed.", inputTermState.getBondName().equals(outputTermState.getBondName()));
+            req.using("BondTerm FractionDigits must not be changed.", inputTermState.getFractionDigits() == outputTermState.getFractionDigits());
+            req.using("BondTerm available units shouldn't be less than 0 and greater than totalUnits",
+                    inputTermState.getUnitsAvailable() >= 0 &&
+                    inputTermState.getUnitsAvailable() <= inputTermState.getTotalUnits());
+            req.using("BondTerm available redemption units should be equal to (totalUnits - UnitsAvailable)",
+                    (inputTermState.getRedemptionAvailable() == inputTermState.getTotalUnits() - inputTermState.getUnitsAvailable()));
+
             return null;
         });
 

@@ -3,7 +3,7 @@ package com.jtk.bond.issuance.flows;
 import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.collect.ImmutableList;
 import com.jtk.bond.issuance.constants.CordaParties;
-import com.jtk.bond.issuance.contract.contants.BondState;
+import com.jtk.bond.issuance.contract.contants.BondStatus;
 import com.jtk.bond.issuance.state.TermState;
 import com.jtk.corda.Utility;
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
@@ -86,7 +86,7 @@ public class CreateAndIssueTerm extends FlowLogic<String> {
                 observers.stream().map(party -> party.getName().getCommonName()).collect(Collectors.joining(",")));
 
         final TermState termState = new TermState(
-                company, new ArrayList<>(), bondName, BondState.ACTIVE.name(),
+                company, new ArrayList<>(), bondName, BondStatus.ACTIVE.name(),
                 couponPaymentLeft, interestRate, purchasePrice,
                 unitsAvailable, 0,new UniqueIdentifier(),
                 this.maturityDate, this.bondType, this.currency, this.creditRating);

@@ -1,8 +1,6 @@
 package com.jtk.bond.issuance.state;
 
 import com.google.common.collect.ImmutableList;
-import com.jtk.bond.issuance.contract.contants.BondCreditRating;
-import com.jtk.bond.issuance.contract.contants.BondType;
 import com.jtk.bond.issuance.contract.TermContract;
 import com.r3.corda.lib.tokens.contracts.states.EvolvableTokenType;
 import com.r3.corda.lib.tokens.contracts.types.TokenPointer;
@@ -13,9 +11,6 @@ import net.corda.core.identity.Party;
 import net.corda.core.schemas.StatePersistable;
 import net.corda.core.serialization.CordaSerializable;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.Currency;
 import java.util.List;
 
 /**
@@ -31,7 +26,7 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
     private final int fractionDigits = 0;
     private final Party issuer; // Issuer of the bond
     private final List<Party> investors; // the investors who brought the bond
-    private final String bondState; // state of the bond
+    private final String bondStatus; // state of the bond
     private final String bondName; // Name of bond cannot be changed
 
     private final String currency;
@@ -41,18 +36,22 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
     private final String maturityDate; // Maturity date of the bond
 
     private final String creditRating; // credit rating of the bond
-    private final int unitsAvailable; // number of units available - reduces with every bond that is brought
+
+    private final int totalUnits; // the total number of units allowed by this term when created = unitsAvailable
+    private final int unitsAvailable; // number of units available - reduces with every bond state that is created
+                                      //  value = totalUnits...0
     private final int redemptionAvailable; // number of units that have to be redeemed - increased with every bond brought
+                                           //  value = 0...totalUnits
     private final String bondType;
     private final UniqueIdentifier linearId; // identifier of the bond
 
-    public TermState(Party issuer, List<Party> investors, String bondName, String bondState,
+    public TermState(Party issuer, List<Party> investors, String bondName, String bondStatus,
                      int couponPaymentLeft, double interestRate, double purchasePrice,
                      int unitsAvailable, int redemptionAvailable, UniqueIdentifier linearId,
                      String maturityDate, String bondType, String currency, String creditRating) {
         this.issuer = issuer;
         this.investors = investors;
-        this.bondState = bondState;
+        this.bondStatus = bondStatus;
         this.bondType = bondType;
         this.bondName = bondName;
         this.currency = currency;
@@ -62,6 +61,7 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         this.maturityDate = maturityDate;
         this.creditRating = creditRating;
         this.unitsAvailable = unitsAvailable;
+        this.totalUnits = unitsAvailable;
         this.redemptionAvailable = redemptionAvailable;
         this.linearId = linearId;
     }
@@ -90,8 +90,8 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         return investors;
     }
 
-    public String getBondState() {
-        return bondState;
+    public String getBondStatus() {
+        return bondStatus;
     }
 
     public int getCouponPaymentLeft() {
@@ -135,6 +135,10 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         return creditRating;
     }
 
+    public int getTotalUnits() {
+        return totalUnits;
+    }
+
     /* This method returns a TokenPointer by using the linear Id of the evolvable state */
     public TokenPointer<TermState> toPointer(){
         return new TokenPointer<>(new LinearPointer<>(linearId, TermState.class), fractionDigits);
@@ -165,7 +169,7 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
     public String toString() {
         final StringBuilder sb = new StringBuilder("TermState{");
         sb.append("issuer=").append(issuer);
-        sb.append(", bondState='").append(bondState).append('\'');
+        sb.append(", bondStatus='").append(bondStatus).append('\'');
         sb.append(", bondName='").append(bondName).append('\'');
         sb.append(", currency='").append(currency).append('\'');
         sb.append(", couponPaymentLeft=").append(couponPaymentLeft);
@@ -173,6 +177,7 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         sb.append(", purchasePrice=").append(purchasePrice);
         sb.append(", maturityDate='").append(maturityDate).append('\'');
         sb.append(", creditRating='").append(creditRating).append('\'');
+        sb.append(", totalUnits=").append(totalUnits);
         sb.append(", unitsAvailable=").append(unitsAvailable);
         sb.append(", redemptionAvailable=").append(redemptionAvailable);
         sb.append(", bondType='").append(bondType).append('\'');
