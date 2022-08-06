@@ -6,10 +6,10 @@ import com.jtk.bond.issuance.constants.CordaParties;
 import com.jtk.bond.issuance.contract.contants.BondStatus;
 import com.jtk.bond.issuance.state.TermState;
 import com.jtk.corda.Utility;
-import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
+import com.r3.corda.lib.tokens.contracts.states.NonFungibleToken;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.CreateEvolvableTokens;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.IssueTokens;
-import com.r3.corda.lib.tokens.workflows.utilities.FungibleTokenBuilder;
+import com.r3.corda.lib.tokens.workflows.utilities.NonFungibleTokenBuilder;
 import net.corda.core.contracts.TransactionState;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.FlowException;
@@ -23,7 +23,7 @@ import net.corda.core.transactions.SignedTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -86,7 +86,7 @@ public class CreateAndIssueTerm extends FlowLogic<String> {
                 observers.stream().map(party -> party.getName().getCommonName()).collect(Collectors.joining(",")));
 
         final TermState termState = new TermState(
-                company, new ArrayList<>(), bondName, BondStatus.ACTIVE.name(),
+                company, new HashSet<>(), bondName, BondStatus.ACTIVE.name(),
                 couponPaymentLeft, interestRate, purchasePrice,
                 unitsAvailable, 0,new UniqueIdentifier(),
                 this.maturityDate, this.bondType, this.currency, this.creditRating);
@@ -100,18 +100,20 @@ public class CreateAndIssueTerm extends FlowLogic<String> {
         TransactionState<TermState> transactionState = new TransactionState<>(termState, notary);
         // Using the build-in flow to create an evolvable token type -- Term
 
+
         subFlow(new CreateEvolvableTokens(transactionState, observers));
-        // Indicate the recipient which is the issuing party itself here
-        //new FungibleToken(issueAmount, getOurIdentity(), null);
-        FungibleToken termStateToken = new FungibleTokenBuilder()
+        NonFungibleToken termStateNFT = new NonFungibleTokenBuilder()
                 .ofTokenType(termState.toPointer())
-                .withAmount(1)
                 .issuedBy(getOurIdentity())
                 .heldBy(getOurIdentity())
-                .buildFungibleToken();
-        SignedTransaction stx = subFlow(new IssueTokens(ImmutableList.of(termStateToken), observers));
+                .buildNonFungibleToken();
+        SignedTransaction stx = subFlow(new IssueTokens(ImmutableList.of(termStateNFT), observers));
         log.info("Done CreateAndIssueTerm...");
-        return "\nGenerated 1 "  + this.bondName + " Term with price: "
-                + this.purchasePrice + " " + "\nTransaction ID: "+ stx.getId();
+        String jsnStr = String.format("{\"transactionID\":\"%s\"" +
+                        ",\"bondName\":\"%s\"" +
+                        ",\"purchasePrice\":%s" +
+                        ",\"linearId\":\"%s\"}",
+                stx.getId(), this.bondName, this.purchasePrice, termState.getLinearId());
+        return "Generated 1 term >"+jsnStr;
     }
 }

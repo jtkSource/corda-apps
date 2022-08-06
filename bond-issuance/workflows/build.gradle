@@ -46,6 +46,7 @@ dependencies {
     // For testing.
     testCompile "junit:junit:$junit_version"
     testCompile "$corda_release_group:corda-node-driver:$corda_release_version"
+    testCompile "org.json:json:20220320"
 
     // CorDapp dependencies.
     cordapp project(":contracts")

@@ -12,6 +12,8 @@ import net.corda.core.schemas.StatePersistable;
 import net.corda.core.serialization.CordaSerializable;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * - Issuer issues a term state which records the bonds properties
@@ -25,7 +27,7 @@ import java.util.List;
 public class TermState extends EvolvableTokenType implements StatePersistable {
     private final int fractionDigits = 0;
     private final Party issuer; // Issuer of the bond
-    private final List<Party> investors; // the investors who brought the bond
+    private final Set<Party> investors; // the investors who brought the bond
     private final String bondStatus; // state of the bond
     private final String bondName; // Name of bond cannot be changed
 
@@ -45,7 +47,7 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
     private final String bondType;
     private final UniqueIdentifier linearId; // identifier of the bond
 
-    public TermState(Party issuer, List<Party> investors, String bondName, String bondStatus,
+    public TermState(Party issuer, Set<Party> investors, String bondName, String bondStatus,
                      int couponPaymentLeft, double interestRate, double purchasePrice,
                      int unitsAvailable, int redemptionAvailable, UniqueIdentifier linearId,
                      String maturityDate, String bondType, String currency, String creditRating) {
@@ -86,7 +88,7 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         return issuer;
     }
 
-    public List<Party> getInvestors() {
+    public Set<Party> getInvestors() {
         return investors;
     }
 
@@ -182,6 +184,35 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         sb.append(", redemptionAvailable=").append(redemptionAvailable);
         sb.append(", bondType='").append(bondType).append('\'');
         sb.append(", linearId=").append(linearId);
+        sb.append('}');
+        return sb.toString();
+    }
+
+    public String toJson(){
+
+        final StringBuilder sb = new StringBuilder("{");
+        sb.append("\"issuer\":").append("\"").append(issuer).append("\"");
+        String invList = this.investors.stream().map(party -> party.getName().getCommonName())
+                .collect(Collectors.joining("\",\"","\"","\""));
+        sb.append(",\"investors\":");
+        if(invList.length() != 0) {
+            sb.append("[").append(invList).append("]");
+        }else {
+            sb.append("[]");
+        }
+        sb.append(",\"bondStatus\":").append("\"").append(bondStatus).append("\"");
+        sb.append(",\"bondName\":").append("\"").append(bondName).append("\"");
+        sb.append(",\"currency\":").append("\"").append(currency).append("\"");
+        sb.append(",\"couponPaymentLeft\":").append(couponPaymentLeft);
+        sb.append(",\"interestRate\":").append(interestRate);
+        sb.append(",\"purchasePrice\":").append(purchasePrice);
+        sb.append(",\"maturityDate\":").append(maturityDate);
+        sb.append(",\"creditRating\":").append("\"").append(creditRating).append("\"");
+        sb.append(",\"totalUnits\":").append(totalUnits);
+        sb.append(",\"unitsAvailable\":").append(unitsAvailable);
+        sb.append(",\"redemptionAvailable\":").append(redemptionAvailable);
+        sb.append(",\"bondType\":").append("\"").append(bondType).append("\"");
+        sb.append(",\"linearId\":").append("\"").append(linearId).append("\"");
         sb.append('}');
         return sb.toString();
     }

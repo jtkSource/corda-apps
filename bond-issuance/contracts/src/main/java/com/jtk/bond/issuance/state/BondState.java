@@ -168,4 +168,24 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
         sb.append('}');
         return sb.toString();
     }
+
+    public String toJson(){
+        //":
+        final StringBuilder sb = new StringBuilder("{");
+        sb.append("\"issuer\":").append("\"").append(issuer).append("\"");
+        sb.append(",\"investor\":").append("\"").append(investor).append("\"");
+        sb.append(",\"interestRate\":").append(interestRate);
+        sb.append(",\"purchasePrice\":").append(purchasePrice);
+        sb.append(",\"maturityDate\":").append("\"").append(maturityDate).append("\"");
+        sb.append(",\"creditRating\":").append("\"").append(creditRating).append("\"");
+        sb.append(",\"couponPaymentLeft\":").append(couponPaymentLeft);
+        sb.append(",\"bondType\":").append("\"").append(bondType).append("\"");
+        sb.append(",\"currency\":").append("\"").append(currency).append("\"");
+        sb.append(",\"bondStatus\":").append("\"").append(bondStatus).append("\"");
+        sb.append(",\"bondName\":").append("\"").append(bondName).append("\"");
+        sb.append(",\"teamStateLinearID:\"").append("\"").append(teamStateLinearID).append("\"");
+        sb.append(",\"linearId:\"").append("\"").append(linearId).append("\"");
+        sb.append('}');
+        return sb.toString();
+    }
 }

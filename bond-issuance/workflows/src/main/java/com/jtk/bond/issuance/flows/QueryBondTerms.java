@@ -2,10 +2,15 @@ package com.jtk.bond.issuance.flows;
 
 import co.paralleluniverse.fibers.Suspendable;
 import com.jtk.bond.issuance.flows.utils.CustomQuery;
+import com.jtk.bond.issuance.state.TermState;
+import net.corda.core.contracts.StateAndRef;
+import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.FlowLogic;
 import net.corda.core.flows.InitiatingFlow;
 import net.corda.core.flows.StartableByRPC;
 import net.corda.core.utilities.ProgressTracker;
+
+import java.util.stream.Collectors;
 
 public class QueryBondTerms {
 
@@ -25,7 +30,11 @@ public class QueryBondTerms {
         @Override
         @Suspendable
         public String call() {
-            return CustomQuery.queryTermsPointerByCurrency(currency, getServiceHub()).toString();
+            return CustomQuery.queryTermsPointerByCurrency(currency, getServiceHub())
+                    .stream()
+                    .map(TermState::toJson)
+                    .collect(Collectors.toList())
+                    .toString();
         }
     }
 
@@ -45,7 +54,11 @@ public class QueryBondTerms {
         @Override
         @Suspendable
         public String call() {
-            return CustomQuery.queryTermsPointerByCreditRating(creditRating, getServiceHub()).toString();
+            return CustomQuery.queryTermsPointerByCreditRating(creditRating, getServiceHub())
+                    .stream()
+                    .map(TermState::toJson)
+                    .collect(Collectors.toList())
+                    .toString();
         }
     }
 
@@ -65,7 +78,10 @@ public class QueryBondTerms {
         @Override
         @Suspendable
         public String call() {
-            return CustomQuery.queryTermsPointerLessThanMaturityDate(maturityDate, getServiceHub()).toString();
+            return CustomQuery.queryTermsPointerLessThanMaturityDate(maturityDate, getServiceHub())
+                    .stream().map(TermState::toJson)
+                    .collect(Collectors.toList())
+                    .toString();
         }
     }
 
@@ -85,7 +101,32 @@ public class QueryBondTerms {
         @Override
         @Suspendable
         public String call() {
-            return CustomQuery.queryTermsPointerGreaterThanMaturityDate(maturityDate, getServiceHub()).toString();
+            return CustomQuery.queryTermsPointerGreaterThanMaturityDate(maturityDate, getServiceHub())
+                    .stream().map(TermState::toJson)
+                    .collect(Collectors.toList())
+                    .toString();
+        }
+    }
+
+    @InitiatingFlow
+    @StartableByRPC
+    public static class GetBondByTeamStateLinearID extends FlowLogic<String>{
+        private final ProgressTracker progressTracker = new ProgressTracker();
+        private final UniqueIdentifier teamStateLinearID;
+
+        public GetBondByTeamStateLinearID(UniqueIdentifier teamStateLinearID) {
+            this.teamStateLinearID = teamStateLinearID;
+        }
+        @Override
+        public ProgressTracker getProgressTracker() {
+            return progressTracker;
+        }
+        @Override
+        @Suspendable
+        public String call() {
+            StateAndRef<TermState> termSateAndRef = CustomQuery.queryTermsByTeamStateLinearID(teamStateLinearID, getServiceHub());
+            return termSateAndRef.getState().getData().toPointer().getPointer()
+                    .resolve(getServiceHub()).getState().getData().toJson();
         }
     }
 }

@@ -15,7 +15,8 @@ public class Utility {
         List<Party> parties = new ArrayList<>();
         identityService.getAllIdentities().forEach(partyAndCertificate -> {
             Party party = partyAndCertificate.getParty();
-            if(party.getName().getOrganisationUnit().equals(organizationalUnit)){
+            String ou = party.getName().getOrganisationUnit();
+            if(ou != null && ou.equals(organizationalUnit)){
                 parties.add(party);
             }
         });
