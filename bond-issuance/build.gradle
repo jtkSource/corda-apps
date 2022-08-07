@@ -42,6 +42,7 @@ allprojects {
 
         mavenCentral()
         maven { url 'https://software.r3.com/artifactory/corda' }
+        maven { url "https://software.r3.com/artifactory/corda-dependencies" }
         maven { url 'https://jitpack.io' }
         //SDK lib
         maven { url 'https://software.r3.com/artifactory/corda-lib' }
@@ -94,11 +95,11 @@ dependencies {
     cordaDriver "net.corda:corda-shell:4.9"
 
     // Token SDK dependencies.
-//    cordapp "$confidential_id_release_group:ci-workflows:$confidential_id_release_version"
+    //  cordapp "$confidential_id_release_group:ci-workflows:$confidential_id_release_version"
     cordapp "$tokens_release_group:tokens-contracts:$tokens_release_version"
     cordapp "$tokens_release_group:tokens-workflows:$tokens_release_version"
-//    cordapp "$tokens_release_group:tokens-money:$tokens_release_version"
-//    cordapp "$tokens_release_group:tokens-selection:$tokens_release_version"
+    //  cordapp "$tokens_release_group:tokens-money:$tokens_release_version"
+    //  cordapp "$tokens_release_group:tokens-selection:$tokens_release_version"
 }
 
 task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
