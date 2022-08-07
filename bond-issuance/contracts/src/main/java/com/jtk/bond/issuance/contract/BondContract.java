@@ -3,7 +3,6 @@ package com.jtk.bond.issuance.contract;
 import com.jtk.bond.issuance.contract.contants.BondCreditRating;
 import com.jtk.bond.issuance.contract.contants.BondType;
 import com.jtk.bond.issuance.state.BondState;
-import com.jtk.bond.issuance.state.TermState;
 import com.r3.corda.lib.tokens.contracts.EvolvableTokenContract;
 import net.corda.core.contracts.Contract;
 import net.corda.core.transactions.LedgerTransaction;
@@ -42,7 +41,7 @@ public class BondContract extends EvolvableTokenContract implements Contract {
         // bond state should be associated with a term state
 
         requireThat(req->{
-           req.using("BondState requires a TermState ", bondState.getTeamStateLinearID()!=null);
+           req.using("BondState requires a TermState ", bondState.getTermStateLinearID()!=null);
            req.using("BondState requires an Investor from a Bank",
                    bondState.getInvestor().getName().getOrganisationUnit().equals("Bank"));
             req.using("BondState Status cannot be empty", (!bondState.getBondStatus().isEmpty()));

@@ -1,0 +1,116 @@
+package com.jtk.bond.issuance.flows;
+
+import co.paralleluniverse.fibers.Suspendable;
+import com.google.common.collect.ImmutableList;
+import com.jtk.bond.issuance.flows.utils.CustomQuery;
+import com.jtk.bond.issuance.state.BondState;
+import com.jtk.bond.issuance.state.TermState;
+import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
+import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType;
+import net.corda.core.contracts.Amount;
+import net.corda.core.contracts.StateAndRef;
+import net.corda.core.contracts.StateRef;
+import net.corda.core.contracts.UniqueIdentifier;
+import net.corda.core.crypto.SecureHash;
+import net.corda.core.flows.FlowException;
+import net.corda.core.flows.FlowLogic;
+import net.corda.core.flows.FlowSession;
+import net.corda.core.flows.InitiatingFlow;
+import net.corda.core.flows.ReceiveFinalityFlow;
+import net.corda.core.flows.SendStateAndRefFlow;
+import net.corda.core.flows.SignTransactionFlow;
+import net.corda.core.flows.StartableByRPC;
+import net.corda.core.identity.AbstractParty;
+import net.corda.core.identity.Party;
+import net.corda.core.transactions.SignedTransaction;
+import net.corda.core.utilities.ProgressTracker;
+import org.checkerframework.checker.units.qual.A;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+
+import static net.corda.core.contracts.ContractsDSL.requireThat;
+
+@InitiatingFlow
+@StartableByRPC
+public class RequestForBondInitiatorFlow extends FlowLogic<String> {
+    private static final Logger log = LoggerFactory.getLogger(RequestForBondInitiatorFlow.class);
+    private final UniqueIdentifier teamStateLinearID;
+    private final int unitsOfBonds;
+
+    public RequestForBondInitiatorFlow(UniqueIdentifier teamStateLinearID, int unitsOfBonds) {
+        this.teamStateLinearID = teamStateLinearID;
+        this.unitsOfBonds = unitsOfBonds;
+    }
+
+    @Suspendable
+    @Override
+    public String call() throws FlowException {
+
+        Party investorParty = getOurIdentity();
+        if (!investorParty.getName().getOrganisationUnit().equals("Bank")) {
+            log.error("The flow is not invoked by a bank");
+            throw new FlowException("Flow can be invoked by OU=Bank only");
+        }
+
+        //find term based on linearID and see if the requested amount is available
+        StateAndRef<TermState> termStateAndRef = CustomQuery.queryTermsByTeamStateLinearID
+                (teamStateLinearID, getServiceHub());
+
+        if (termStateAndRef != null) {
+            log.info("Term: {} is present ", teamStateLinearID);
+            TermState termState = termStateAndRef.getState()
+                    .getData().toPointer(TermState.class)
+                    .getPointer().resolve(getServiceHub()).getState().getData();
+            // check if requested unit is greater than available units
+            if (unitsOfBonds > termState.getUnitsAvailable()) {
+                throw new FlowException("Requesting for more bonds than available for the term");
+            }
+            if (termState.getIssuer().equals(investorParty)) {
+                throw new FlowException("Issuer cannot be investor of the bond");
+            }
+
+            RequestForBondResponderFlow.BondRequestNotification bondRequestNotification =
+                    new RequestForBondResponderFlow.BondRequestNotification(getOurIdentity(), unitsOfBonds);
+
+            // We start by initiating a flow session with the counterparty. We
+            // will use this session to send and receive messages from the
+            // counterparty.
+            FlowSession termIssuerSession = initiateFlow(termState.getIssuer());
+            log.info("RequestForBondFlow$Initiator Session initiated for counterparty {}",
+                    termIssuerSession.getCounterparty().getName().getCommonName());
+            // first send the TermState held by the investor
+            subFlow(new SendStateAndRefFlow(termIssuerSession, ImmutableList.of(termStateAndRef)));
+            // then send the bond request notification
+            termIssuerSession.send(bondRequestNotification);
+            try {
+
+                SignedTransaction finalTx = subFlow(new ReceiveFinalityFlow(termIssuerSession));
+
+                FungibleToken fungibleToken = (FungibleToken) finalTx.getTx().getOutputStates().get(0);
+                Party tokenIssuer = fungibleToken.getIssuer();
+                String issuerCN = tokenIssuer.getName().getCommonName();
+                Party tokenHolder = (Party)fungibleToken.getHolder();
+                String holderCN = tokenHolder.getName().getCommonName();
+                Amount<IssuedTokenType> fungibleTokenAmount = ((FungibleToken) finalTx.getTx().getOutputStates().get(0)).getAmount();
+                String tokenIdentifier = fungibleTokenAmount.getToken().getTokenType().getTokenIdentifier();
+                return "{" +
+                        "\"tokenType\": \"FungibleToken\", " +
+                        "\"name\": \"BondState\", " +
+                        "\"tokenIdentifier\": \""+tokenIdentifier+"\", " +
+                        "\"issuer\": \""+issuerCN+"\", " +
+                        "\"holder\": \""+holderCN+"\", " +
+                        "\"amount\": "+fungibleTokenAmount.getQuantity()+" " +
+                        "}";
+            } catch (Exception e) {
+                log.error("Unexpected Exception ", e);
+                throw new IllegalArgumentException("Unexpected Exception in Finalizing the flow");
+            }
+
+        } else {
+            throw new IllegalArgumentException(teamStateLinearID + ": not found xxx");
+        }
+    }
+}

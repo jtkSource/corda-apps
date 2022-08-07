@@ -31,7 +31,7 @@ public class TermContract extends EvolvableTokenContract implements Contract {
         TermState outputState = (TermState) tx.getOutput(0);
         // ensure state is created by the same party that invoked the flow
         if(!(tx.getCommand(0).getSigners().contains(outputState.getIssuer().getOwningKey()))){
-            throw new IllegalArgumentException("Company Signature Required!!");
+            throw new IllegalArgumentException("Issuer Signature Required!!");
         }
 
         // perform all the other checks for EvolvableTokenContract
@@ -72,6 +72,7 @@ public class TermContract extends EvolvableTokenContract implements Contract {
     public void additionalUpdateChecks(LedgerTransaction tx) {
         TermState inputTermState = tx.inputsOfType(TermState.class).get(0);
         TermState outputTermState = tx.outputsOfType(TermState.class).get(0);
+
         requireThat(req-> {
             //Validations when a bond Term is updated
             req.using("BondTerm Issuer cannot be changed", inputTermState.getIssuer().equals(outputTermState.getIssuer()));

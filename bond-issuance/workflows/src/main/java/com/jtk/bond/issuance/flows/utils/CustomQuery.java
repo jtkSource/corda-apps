@@ -1,6 +1,7 @@
 package com.jtk.bond.issuance.flows.utils;
 
 import com.jtk.bond.issuance.contract.contants.BondStatus;
+import com.jtk.bond.issuance.state.BondState;
 import com.jtk.bond.issuance.state.TermState;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
@@ -68,5 +69,14 @@ public class CustomQuery {
                 .filter(sr-> sr.getState().getData().getLinearId().equals(teamStateLinearID))
                 .findAny()
                 .orElseThrow(()-> new IllegalArgumentException("TeamStateLinearID ="+teamStateLinearID.toString()+ " not found from vault"));
+    }
+
+    public static StateAndRef<BondState> queryBondByTeamStateLinearID(UniqueIdentifier uniqueIdentifier, ServiceHub serviceHub) {
+        List<StateAndRef<BondState>> statesAndRef = serviceHub.getVaultService().queryBy(BondState.class).getStates();
+        return statesAndRef.stream()
+                .filter(sr-> sr.getState().getData().getBondStatus().equals(BondStatus.ACTIVE.name()))
+                .filter(sr-> sr.getState().getData().getLinearId().equals(uniqueIdentifier))
+                .findAny()
+                .orElseThrow(()-> new IllegalArgumentException("BondStateLinearID="+uniqueIdentifier.toString()+ " not found from vault"));
     }
 }

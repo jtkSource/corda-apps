@@ -12,15 +12,15 @@ import net.corda.core.utilities.ProgressTracker;
 
 import java.util.stream.Collectors;
 
-public class QueryBondTerms {
+public class QueryBondTermsFlow {
 
     @InitiatingFlow
     @StartableByRPC
-    public static class GetBondByCurrency extends FlowLogic<String>{
+    public static class GetBondTermsByCurrency extends FlowLogic<String>{
         private final ProgressTracker progressTracker = new ProgressTracker();
         private final String currency;
 
-        public GetBondByCurrency(String currency) {
+        public GetBondTermsByCurrency(String currency) {
             this.currency = currency;
         }
         @Override
@@ -40,11 +40,11 @@ public class QueryBondTerms {
 
     @InitiatingFlow
     @StartableByRPC
-    public static class GetBondByRating extends FlowLogic<String>{
+    public static class GetBondTermsByRating extends FlowLogic<String>{
         private final ProgressTracker progressTracker = new ProgressTracker();
         private final String creditRating;
 
-        public GetBondByRating(String creditRating) {
+        public GetBondTermsByRating(String creditRating) {
             this.creditRating = creditRating;
         }
         @Override
@@ -64,11 +64,11 @@ public class QueryBondTerms {
 
     @InitiatingFlow
     @StartableByRPC
-    public static class GetBondLessThanMaturityDate extends FlowLogic<String>{
+    public static class GetBondTermsLessThanMaturityDate extends FlowLogic<String>{
         private final ProgressTracker progressTracker = new ProgressTracker();
         private final String maturityDate;
 
-        public GetBondLessThanMaturityDate(String maturityDate) {
+        public GetBondTermsLessThanMaturityDate(String maturityDate) {
             this.maturityDate = maturityDate;
         }
         @Override
@@ -87,11 +87,11 @@ public class QueryBondTerms {
 
     @InitiatingFlow
     @StartableByRPC
-    public static class GetBondGreaterThanMaturityDate extends FlowLogic<String>{
+    public static class GetBondTermsGreaterThanMaturityDate extends FlowLogic<String>{
         private final ProgressTracker progressTracker = new ProgressTracker();
         private final String maturityDate;
 
-        public GetBondGreaterThanMaturityDate(String maturityDate) {
+        public GetBondTermsGreaterThanMaturityDate(String maturityDate) {
             this.maturityDate = maturityDate;
         }
         @Override
@@ -110,11 +110,11 @@ public class QueryBondTerms {
 
     @InitiatingFlow
     @StartableByRPC
-    public static class GetBondByTeamStateLinearID extends FlowLogic<String>{
+    public static class GetBondTermByTeamStateLinearID extends FlowLogic<String>{
         private final ProgressTracker progressTracker = new ProgressTracker();
         private final UniqueIdentifier teamStateLinearID;
 
-        public GetBondByTeamStateLinearID(UniqueIdentifier teamStateLinearID) {
+        public GetBondTermByTeamStateLinearID(UniqueIdentifier teamStateLinearID) {
             this.teamStateLinearID = teamStateLinearID;
         }
         @Override

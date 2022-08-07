@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 
 @InitiatingFlow
 @StartableByRPC
-public class CreateAndIssueTerm extends FlowLogic<String> {
+public class CreateAndIssueTermFlow extends FlowLogic<String> {
     private final String bondName; // Name of bond cannot be changed
     private final int couponPaymentLeft; // number of coupon payments left
     private final double interestRate; // current interest rate for the bonds
@@ -45,13 +45,13 @@ public class CreateAndIssueTerm extends FlowLogic<String> {
     private final String creditRating;
 
     private final String currency;
-    private static final Logger log = LoggerFactory.getLogger(CreateAndIssueTerm.class);
+    private static final Logger log = LoggerFactory.getLogger(CreateAndIssueTermFlow.class);
 
 
-    public CreateAndIssueTerm(String bondName, int couponPaymentLeft,
-                              double interestRate, double purchasePrice,int unitsAvailable,
-                              String maturityDate, String bondType, String currency,
-                              String creditRating)
+    public CreateAndIssueTermFlow(String bondName, int couponPaymentLeft,
+                                  double interestRate, double purchasePrice, int unitsAvailable,
+                                  String maturityDate, String bondType, String currency,
+                                  String creditRating)
     {
         this.bondName = bondName;
         this.couponPaymentLeft = couponPaymentLeft;
@@ -98,10 +98,11 @@ public class CreateAndIssueTerm extends FlowLogic<String> {
         log.info("Identified Notary {}", notary);
 
         TransactionState<TermState> transactionState = new TransactionState<>(termState, notary);
+
         // Using the build-in flow to create an evolvable token type -- Term
-
-
         subFlow(new CreateEvolvableTokens(transactionState, observers));
+
+
         NonFungibleToken termStateNFT = new NonFungibleTokenBuilder()
                 .ofTokenType(termState.toPointer())
                 .issuedBy(getOurIdentity())

@@ -86,7 +86,7 @@ public class FlowTests {
         /**
          * Create Terms for testing
          */
-        CordaFuture<String> future = gsNode.startFlow(new CreateAndIssueTerm("RFB-GS-TEST1",4, 3.2,1200,
+        CordaFuture<String> future = gsNode.startFlow(new CreateAndIssueTermFlow("RFB-GS-TEST1",4, 3.2,1200,
                 1000,"20270806", "CB", "USD", "AAA"));
         network.runNetwork();
         String response = future.get();
@@ -100,7 +100,7 @@ public class FlowTests {
     @Test
     public void testQueryingBondsByRating() throws ExecutionException, InterruptedException {
         log.info("Starting test1...");
-        CordaFuture<String> bondByRating = observerNode.startFlow(new QueryBondTerms.GetBondByRating("AAA"));
+        CordaFuture<String> bondByRating = observerNode.startFlow(new QueryBondTermsFlow.GetBondTermsByRating("AAA"));
         String jsonStr = bondByRating.get();
         log.info("jsonStr {}", jsonStr);
         JSONArray jArray = (JSONArray) new JSONTokener(jsonStr).nextValue();
@@ -111,7 +111,7 @@ public class FlowTests {
 
     @Test
     public void testCreateAndIssueTermShouldNotifyBankAndObserversOfNewTerm() throws ExecutionException, InterruptedException {
-        CordaFuture<String> future = gsNode.startFlow(new CreateAndIssueTerm("RFB-GS-TEST2",8, 5,100,
+        CordaFuture<String> future = gsNode.startFlow(new CreateAndIssueTermFlow("RFB-GS-TEST2",8, 5,100,
                 1600,"20240806", "CB", "SGD", "BB"));
         network.runNetwork();
         String response = future.get().split(">")[1];
@@ -120,21 +120,60 @@ public class FlowTests {
         log.info("Response to term: {} ->:\n {}",termLinearId, json.toString(2));
 
 
-        CordaFuture<String> bondByLinearId = observerNode.startFlow(new QueryBondTerms.
-                GetBondByTeamStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId)));
+        CordaFuture<String> bondByLinearId = observerNode.startFlow(new QueryBondTermsFlow.GetBondTermByTeamStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId)));
         JSONObject jsonStr = (JSONObject) new JSONTokener(bondByLinearId.get()).nextValue();
         log.info("QueryResponse ->:\n {}",json.toString(2));
         assertEquals(termLinearId, jsonStr.getString("linearId"));
 
 
-        bondByLinearId = hsbcNode.startFlow(new QueryBondTerms.
-                GetBondByTeamStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId)));
+        bondByLinearId = hsbcNode.startFlow(new QueryBondTermsFlow.GetBondTermByTeamStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId)));
         jsonStr = (JSONObject) new JSONTokener(bondByLinearId.get()).nextValue();
         log.info("QueryResponse ->:\n {}",json.toString(2));
         assertEquals(termLinearId, jsonStr.getString("linearId"));
     }
 
     @Test
-    public void testRequestForBondFlow(){}
+    public void testRequestForBondFlow() throws ExecutionException, InterruptedException {
+        CordaFuture<String> bondByRating = hsbcNode.startFlow(new QueryBondTermsFlow.GetBondTermsByRating("AAA"));
+        String jsonStr = bondByRating.get();
+        log.info("jsonStr {}", jsonStr);
+        JSONArray jArray = (JSONArray) new JSONTokener(jsonStr).nextValue();
+        JSONObject termObject = jArray.getJSONObject(0);
+        assertEquals("AAA", termObject.get("creditRating"));
+        String termLinearId = termObject.getString("linearId");
+
+        // Get Bond
+
+        CordaFuture<String> future = hsbcNode.startFlow(new RequestForBondInitiatorFlow
+                (UniqueIdentifier.Companion.fromString(termLinearId), 50));
+        network.runNetwork();
+        String jsonToken = future.get();
+        JSONObject json = (JSONObject) new JSONTokener(jsonToken).nextValue();
+
+        assertEquals(50,json.getLong("amount"));
+        assertEquals("FungibleToken",json.getString("tokenType"));
+        assertEquals("BondState",json.getString("name"));
+        assertEquals("Goldman Sachs",json.getString("issuer"));
+        assertEquals("HSBC",json.getString("holder"));
+
+        String identifier = json.getString("tokenIdentifier");
+
+        String bondStateJson = hsbcNode.startFlow(new QueryBondsFlow.GetBondByTermStateLinearID(UniqueIdentifier.Companion.fromString(identifier)))
+                .get();
+        json = (JSONObject) new JSONTokener(bondStateJson).nextValue();
+        log.info("Bond State JSON {}", json);
+        assertEquals("RFB-GS-TEST1",json.getString("bondName"));
+        bondStateJson = observerNode.startFlow(new QueryBondsFlow.GetBondByTermStateLinearID(UniqueIdentifier.Companion.fromString(identifier)))
+                .get();
+        json = (JSONObject) new JSONTokener(bondStateJson).nextValue();
+        log.info("Bond State JSON {}", json);
+        assertEquals("RFB-GS-TEST1",json.getString("bondName"));
+        bondStateJson = gsNode.startFlow(new QueryBondsFlow.GetBondByTermStateLinearID(UniqueIdentifier.Companion.fromString(identifier)))
+                .get();
+        json = (JSONObject) new JSONTokener(bondStateJson).nextValue();
+        log.info("Bond State JSON {}", json);
+        assertEquals("RFB-GS-TEST1",json.getString("bondName"));
+        assertEquals(termLinearId, json.getString("termStateLinearID"));
+    }
 
 }
