@@ -1,6 +1,7 @@
 package com.jtk.bonds.issuance.cordapp.client.verticle;
 
 import com.jtk.bond.issuance.flows.CreateAndIssueTermFlow;
+import com.jtk.bond.issuance.flows.QueryBondTermsFlow;
 import com.jtk.bonds.issuance.cordapp.client.utils.NodeRPCConnection;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -55,66 +56,133 @@ public class CordaVerticle extends AbstractVerticle {
             JsonObject json = event.body();
             String url = json.getString("url");
             JsonObject responseJson = new JsonObject();
-            Future<JsonObject> future = vertx.executeBlocking(e1 -> {
-                switch (url) {
-                    case "addresses":
-                        responseJson.put("msg", nodeRPC.proxy().nodeInfo().getAddresses().toString());
-                        break;
-                    case "identities":
-                        responseJson.put("msg", nodeRPC.proxy().nodeInfo().getLegalIdentities().toString());
-                        break;
-                    case "platformversion":
-                        responseJson.put("msg", nodeRPC.proxy().nodeInfo().getPlatformVersion());
-                        break;
-                    case "peers":
-                        responseJson.put("msg", getPeers());
-                        break;
-                    case "notaries":
-                        responseJson.put("msg", nodeRPC.proxy().notaryIdentities().toString());
-                        break;
-                    case "flows":
-                        responseJson.put("msg", nodeRPC.proxy().registeredFlows().toString());
-                        break;
-                    case "me":
-                        responseJson.put("msg", whoami());
-                        break;
-                    case "states":
-                        responseJson.put("msg", nodeRPC.proxy().vaultQuery(ContractState.class).getStates().toString());
-                        break;
-                    case "create-bond-terms":
-                        try {
-                            String returnMsg = nodeRPC.proxy().startTrackedFlowDynamic(CreateAndIssueTermFlow.class,
-                                    json.getString("bondName"),
-                                    json.getInteger("couponPaymentLeft"),
-                                    json.getDouble("interestRate"),
-                                    json.getDouble("purchasePrice"),
-                                    json.getInteger("unitsAvailable"),
-                                    json.getString("maturityDate"),
-                                    json.getString("bondType"),
-                                    json.getString("currency"),
-                                    json.getString("creditRating")).getReturnValue().get();
-                            String response = returnMsg.split(">")[1];
-                            responseJson.put("msg", response);
-                        } catch (InterruptedException e) {
-                            log.error("Exception query Corda", e);
-                        } catch (ExecutionException e) {
-                            log.error("Exception query Corda", e);
-                        }
-                        break;
-                    default:
-                        responseJson.put("msg", "API NOT-FOUND");
-                        break;
-                }
-                e1.complete(responseJson);
+            vertx.executeBlocking(e1 -> {
+                        switch (url) {
+                            case "addresses":
+                                responseJson.put("msg", nodeRPC.proxy().nodeInfo().getAddresses().toString());
+                                break;
+                            case "identities":
+                                responseJson.put("msg", nodeRPC.proxy().nodeInfo().getLegalIdentities().toString());
+                                break;
+                            case "platformversion":
+                                responseJson.put("msg", nodeRPC.proxy().nodeInfo().getPlatformVersion());
+                                break;
+                            case "peers":
+                                responseJson.put("msg", getPeers());
+                                break;
+                            case "notaries":
+                                responseJson.put("msg", nodeRPC.proxy().notaryIdentities().toString());
+                                break;
+                            case "flows":
+                                responseJson.put("msg", nodeRPC.proxy().registeredFlows().toString());
+                                break;
+                            case "me":
+                                responseJson.put("msg", whoami());
+                                break;
+                            case "states":
+                                responseJson.put("msg", nodeRPC.proxy().vaultQuery(ContractState.class).getStates().toString());
+                                break;
+                            case "create-bond-terms":
+                                try {
+                                    String returnMsg = nodeRPC.proxy().startTrackedFlowDynamic(CreateAndIssueTermFlow.class,
+                                            json.getString("bondName"),
+                                            json.getInteger("couponPaymentLeft"),
+                                            json.getDouble("interestRate"),
+                                            json.getDouble("purchasePrice"),
+                                            json.getInteger("unitsAvailable"),
+                                            json.getString("maturityDate"),
+                                            json.getString("bondType"),
+                                            json.getString("currency"),
+                                            json.getString("creditRating")).getReturnValue().get();
+                                    String response = returnMsg.split(">")[1];
+                                    responseJson.put("msg", response);
+                                } catch (InterruptedException e) {
+                                    log.error("Exception query Corda", e);
+                                } catch (ExecutionException e) {
+                                    log.error("Exception query Corda", e);
+                                }
+                                break;
+                            case "query-bond-terms":
+                                String qType = json.getString("queryType");
+                                String jsonResponse = "";
 
-            });
-            future.onComplete(result->{
-                if(result.succeeded()){
-                    event.reply(result.result());
-                }else {
-                    event.fail(500,"Couldn't create Term...");
-                }
-            });
+                                if(qType.equalsIgnoreCase("byCurrency")){
+                                    String currency = json.getString("queryValue");
+                                    try {
+                                        jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
+                                                (QueryBondTermsFlow.GetBondTermsByCurrency.class, currency)
+                                                .getReturnValue().get();
+                                    } catch (InterruptedException e) {
+                                        log.error("Exception query Corda", e);
+                                    } catch (ExecutionException e) {
+                                        log.error("Exception query Corda", e);
+                                    }
+                                    responseJson.put("msg", jsonResponse);
+
+                                } else if (qType.equalsIgnoreCase("byRating")) {
+                                    String creditRating = json.getString("queryValue");
+                                    try {
+                                        jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
+                                                        (QueryBondTermsFlow.GetBondTermsByRating.class, creditRating)
+                                                .getReturnValue().get();
+                                    } catch (InterruptedException e) {
+                                        log.error("Exception query Corda", e);
+                                    } catch (ExecutionException e) {
+                                        log.error("Exception query Corda", e);
+                                    }
+                                    responseJson.put("msg", jsonResponse);
+
+                                } else if (qType.equalsIgnoreCase("lessThanMaturityDate")) {
+                                    String maturityDate = json.getString("queryValue");
+                                    try {
+                                        jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
+                                                        (QueryBondTermsFlow.GetBondTermsLessThanMaturityDate.class, maturityDate)
+                                                .getReturnValue().get();
+                                    } catch (InterruptedException e) {
+                                        log.error("Exception query Corda", e);
+                                    } catch (ExecutionException e) {
+                                        log.error("Exception query Corda", e);
+                                    }
+                                    responseJson.put("msg", jsonResponse);
+                                } else if (qType.equalsIgnoreCase("greaterThanMaturityDate")) {
+                                    String maturityDate = json.getString("queryValue");
+                                    try {
+                                        jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
+                                                        (QueryBondTermsFlow.GetBondTermsGreaterThanMaturityDate.class, maturityDate)
+                                                .getReturnValue().get();
+                                    } catch (InterruptedException e) {
+                                        log.error("Exception query Corda", e);
+                                    } catch (ExecutionException e) {
+                                        log.error("Exception query Corda", e);
+                                    }
+                                    responseJson.put("msg", jsonResponse);
+
+                                } else if (qType.equalsIgnoreCase("byTeamStateLinearID")) {
+                                    String teamStateLinearID = json.getString("queryValue");
+                                    try {
+                                        jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
+                                                        (QueryBondTermsFlow.GetBondTermByTeamStateLinearID.class, teamStateLinearID)
+                                                .getReturnValue().get();
+                                    } catch (InterruptedException e) {
+                                        log.error("Exception query Corda", e);
+                                    } catch (ExecutionException e) {
+                                        log.error("Exception query Corda", e);
+                                    }
+                                    responseJson.put("msg", jsonResponse);
+                                }
+                                break;
+                            default:
+                                responseJson.put("msg", "API NOT-FOUND");
+                                break;
+                        }
+                        e1.complete(responseJson);
+                    }).onComplete(result -> {
+                        if (result.succeeded()) {
+                            event.reply(result.result());
+                        } else {
+                            event.fail(500, "Couldn't create Term...");
+                        }
+                    });
         }
 
         private HashMap<String, String> whoami() {

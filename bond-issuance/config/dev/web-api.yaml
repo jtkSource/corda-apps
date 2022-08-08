@@ -60,6 +60,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/messageStatusCode'
+  /corda/terms/query:
+    post:
+      summary: API to query for Terms
+      operationId: query-bond-terms
+      tags:
+        - corda
+        - query-term
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                queryType:
+                  type: string
+                  enum:
+                    - byCurrency
+                    - byRating
+                    - lessThanMaturityDate
+                    - greaterThanMaturityDate
+                    - byTeamStateLinearID
+                queryValue:
+                  type: string
+      responses:
+        '200':
+          description: Response for create Term
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+        '500':
+          description: The request has been accepted for processing, but the processing has not been completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/messageStatusCode'
 components:
   schemas:
     termRequest:
