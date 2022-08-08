@@ -1,6 +1,7 @@
 package com.jtk.bonds.issuance.cordapp.client;
 
 import com.google.common.collect.ImmutableList;
+import com.jtk.bonds.issuance.cordapp.client.verticle.CordaVerticle;
 import com.jtk.bonds.issuance.cordapp.client.verticle.OpenAPIVerticle;
 import io.vertx.config.ConfigRetriever;
 import io.vertx.config.ConfigRetrieverOptions;
@@ -56,6 +57,7 @@ public class MainVerticle extends AbstractVerticle {
                   if(result.succeeded()) {
                     log.info("Completed all verticles !!! ");
                     log.info("deployments:[{}]", deploymentMap);
+
                     startPromise.complete();
                   }else {
                     log.error("Error deploying Verticles...");
@@ -126,7 +128,9 @@ public class MainVerticle extends AbstractVerticle {
   private List<Future> deployAppVerticles(JsonObject json) {
     return ImmutableList
             .of(deployHelper(OpenAPIVerticle.class, new DeploymentOptions(deploymentOptions)
-                    .setInstances(json.getInteger("vertx.OpenAPIVerticle.instances"))));
+                    .setInstances(json.getInteger("vertx.OpenAPIVerticle.instances"))),
+                    deployHelper(CordaVerticle.class, new DeploymentOptions(deploymentOptions))
+            );
   }
   private Future<?> deployHelper(Class vertxClass, DeploymentOptions deploymentOptions) {
     return Future.future(voidPromise -> {

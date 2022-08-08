@@ -1,14 +1,103 @@
 openapi: "3.0.0"
 info:
   version: 1.0.0
-  title: WebAPP API
+  title: Corda API
 servers:
-  - url: http://localhost:8888
+  - url: http://localhost:9091
 paths:
-  /addresses:
+  /corda/{apiId}:
     get:
-
-
-  /bond/term:
+      summary: get the address for the corda nodes
+      operationId: get-corda-details
+      tags:
+        - corda-info
+      parameters:
+        - name: apiId
+          in: path
+          required: true
+          description: The API to query on the corda network
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Retrieved the addresses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+        '500':
+          description: The request has been accepted for processing, but the processing has not been completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/messageStatusCode'
+  /corda/terms:
     post:
-      summary: "POST request to create Bond Term"
+      summary: Create Bond Term
+      operationId: create-bond-terms
+      tags:
+        - corda
+        - create-term
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/termRequest'
+      responses:
+        '200':
+          description: Response for create Term
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/termCreateResponse'
+        '500':
+          description: The request has been accepted for processing, but the processing has not been completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/messageStatusCode'
+components:
+  schemas:
+    termRequest:
+      type: object
+      properties:
+        bondName:
+          type: string
+        couponPaymentLeft:
+          type: number
+        interestRate:
+          type: number
+        purchasePrice:
+          type: number
+        unitsAvailable:
+          type: number
+        maturityDate:
+          type: string
+        bondType:
+          type: string
+        currency:
+          type: string
+        creditRating:
+          type: string
+    termCreateResponse:
+      type: object
+      properties:
+        transactionID:
+          type: string
+        bondName:
+          type: string
+        purchasePrice:
+          type: string
+        linearId:
+          type: string
+    messageStatusCode:
+      type: object
+      properties:
+        msg:
+          type: string
+        code:
+          type: string

@@ -3,5 +3,9 @@
   "welcome.message": "Hello from Node SGX!!",
   "vertx.worker.executetime.ms": 3000,
   "vertx.worker.pool.size": 5,
-  "vertx.OpenAPIVerticle.instances": 1
+  "vertx.OpenAPIVerticle.instances": 1,
+  "vertx.corda.rpc.host": "localhost",
+  "vertx.corda.rpc.username": "corda",
+  "vertx.corda.rpc.password": "corda@123",
+  "vertx.corda.rpc.port": 10003
 }
