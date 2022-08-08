@@ -1,7 +1,7 @@
-package com.jtk.bonds.issuance.cordapp_client.verticle;
+package com.jtk.bonds.issuance.cordapp.client.verticle;
 
-import com.jtk.bonds.issuance.cordapp_client.MainVerticle;
-import com.jtk.bonds.issuance.cordapp_client.route.handler.HandlerFactory;
+import com.jtk.bonds.issuance.cordapp.client.MainVerticle;
+import com.jtk.bonds.issuance.cordapp.client.route.handler.HandlerFactory;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;

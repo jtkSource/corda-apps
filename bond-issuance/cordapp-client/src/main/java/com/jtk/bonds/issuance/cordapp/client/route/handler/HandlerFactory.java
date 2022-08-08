@@ -1,4 +1,4 @@
-package com.jtk.bonds.issuance.cordapp_client.route.handler;
+package com.jtk.bonds.issuance.cordapp.client.route.handler;
 
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;

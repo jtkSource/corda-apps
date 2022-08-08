@@ -1,0 +1,7 @@
+{
+  "http.server.port": 9091,
+  "welcome.message": "Hello from Node SGX!!",
+  "vertx.worker.executetime.ms": 3000,
+  "vertx.worker.pool.size": 5,
+  "vertx.OpenAPIVerticle.instances": 1
+}

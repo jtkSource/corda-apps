@@ -5,32 +5,10 @@ info:
 servers:
   - url: http://localhost:8888
 paths:
-  /hello:
+  /addresses:
     get:
-      summary: Returns Hello ! from the APP
-      operationId: api-ping-hello
-      tags:
-        - ping
-      responses:
-        '200':
-          description: Response with Hello
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  date:
-                    type: string
-        default:
-          description: Unexpected Error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  code:
-                    type: string
+
+
+  /bond/term:
+    post:
+      summary: "POST request to create Bond Term"

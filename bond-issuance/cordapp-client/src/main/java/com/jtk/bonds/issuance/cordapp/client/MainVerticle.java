@@ -1,7 +1,7 @@
-package com.jtk.bonds.issuance.cordapp_client;
+package com.jtk.bonds.issuance.cordapp.client;
 
 import com.google.common.collect.ImmutableList;
-import com.jtk.bonds.issuance.cordapp_client.verticle.OpenAPIVerticle;
+import com.jtk.bonds.issuance.cordapp.client.verticle.OpenAPIVerticle;
 import io.vertx.config.ConfigRetriever;
 import io.vertx.config.ConfigRetrieverOptions;
 import io.vertx.config.ConfigStoreOptions;
@@ -36,8 +36,8 @@ public class MainVerticle extends AbstractVerticle {
 
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
-    log.info("Starting MainVertx...");
-    log.info("Configuring Vert.X");
+    log.info("Starting MainVertX...");
+    log.info("Configuring VertX...");
     ConfigRetriever configRetriever = getAppConfig();
     configRetriever.getConfig(rs -> {
       if (rs.succeeded()) {
