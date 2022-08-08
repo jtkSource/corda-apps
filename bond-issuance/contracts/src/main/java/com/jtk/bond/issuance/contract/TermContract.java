@@ -80,10 +80,10 @@ public class TermContract extends EvolvableTokenContract implements Contract {
             req.using("BondTerm Name must not be changed.", inputTermState.getBondName().equals(outputTermState.getBondName()));
             req.using("BondTerm FractionDigits must not be changed.", inputTermState.getFractionDigits() == outputTermState.getFractionDigits());
             req.using("BondTerm available units shouldn't be less than 0 and greater than totalUnits",
-                    inputTermState.getUnitsAvailable() >= 0 &&
-                    inputTermState.getUnitsAvailable() <= inputTermState.getTotalUnits());
+                    outputTermState.getUnitsAvailable() >= 0 &&
+                            outputTermState.getUnitsAvailable() <= inputTermState.getTotalUnits());
             req.using("BondTerm available redemption units should be equal to (totalUnits - UnitsAvailable)",
-                    (inputTermState.getRedemptionAvailable() == inputTermState.getTotalUnits() - inputTermState.getUnitsAvailable()));
+                    (outputTermState.getRedemptionAvailable() == outputTermState.getTotalUnits() - outputTermState.getUnitsAvailable()));
 
             return null;
         });

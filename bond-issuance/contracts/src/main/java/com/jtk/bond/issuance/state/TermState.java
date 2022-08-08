@@ -63,8 +63,8 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         this.maturityDate = maturityDate;
         this.creditRating = creditRating;
         this.unitsAvailable = unitsAvailable;
-        this.totalUnits = unitsAvailable;
         this.redemptionAvailable = redemptionAvailable;
+        this.totalUnits = unitsAvailable + redemptionAvailable;
         this.linearId = linearId;
     }
 

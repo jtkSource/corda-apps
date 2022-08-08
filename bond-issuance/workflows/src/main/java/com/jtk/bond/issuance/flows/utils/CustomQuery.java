@@ -9,6 +9,7 @@ import net.corda.core.node.ServiceHub;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -79,4 +80,54 @@ public class CustomQuery {
                 .findAny()
                 .orElseThrow(()-> new IllegalArgumentException("BondStateLinearID="+uniqueIdentifier.toString()+ " not found from vault"));
     }
+
+    public static Collection<BondState> queryBondsPointerGreaterThanMaturityDate(String maturityDate, ServiceHub serviceHub) {
+        List<StateAndRef<BondState>> statesAndRef = serviceHub.getVaultService().queryBy(BondState.class).getStates();
+        return statesAndRef.stream()
+                .map(sr->sr.getState().getData().toPointer(BondState.class))
+                .map(p->p.getPointer().resolve(serviceHub).getState().getData())
+                .filter(ts-> ts.getBondStatus().equals(BondStatus.ACTIVE.name()))
+                .filter(ts-> {
+                    LocalDate bondMaturityDate = LocalDate.parse(ts.getMaturityDate(), locateDateformat);
+                    LocalDate queryMaturityDate = LocalDate.parse(maturityDate, locateDateformat);
+                    return bondMaturityDate.isAfter(queryMaturityDate);
+                })
+                .collect(Collectors.toList());
+
+    }
+
+    public static Collection<BondState> queryBondsPointerLessThanMaturityDate(String maturityDate, ServiceHub serviceHub) {
+        List<StateAndRef<BondState>> statesAndRef = serviceHub.getVaultService().queryBy(BondState.class).getStates();
+        return statesAndRef.stream()
+                .map(sr->sr.getState().getData().toPointer(BondState.class))
+                .map(p->p.getPointer().resolve(serviceHub).getState().getData())
+                .filter(ts-> ts.getBondStatus().equals(BondStatus.ACTIVE.name()))
+                .filter(ts-> {
+                    LocalDate bondMaturityDate = LocalDate.parse(ts.getMaturityDate(), locateDateformat);
+                    LocalDate queryMaturityDate = LocalDate.parse(maturityDate, locateDateformat);
+                    return bondMaturityDate.isBefore(queryMaturityDate);
+                })
+                .collect(Collectors.toList());
+    }
+
+    public static List<BondState> queryBondsPointerByCurrency(String currency, ServiceHub serviceHub) {
+        List<StateAndRef<BondState>> statesAndRef = serviceHub.getVaultService().queryBy(BondState.class).getStates();
+        return statesAndRef.stream()
+                .map(sr->sr.getState().getData().toPointer(BondState.class))
+                .map(p->p.getPointer().resolve(serviceHub).getState().getData())
+                .filter(ts-> ts.getCurrency().equals(currency) &&
+                        ts.getBondStatus().equals(BondStatus.ACTIVE.name()))
+                .collect(Collectors.toList());
+    }
+
+    public static List<BondState> queryBondPointerByCreditRating(String rating, ServiceHub serviceHub) {
+        List<StateAndRef<BondState>> statesAndRef = serviceHub.getVaultService().queryBy(BondState.class).getStates();
+        return statesAndRef.stream()
+                .map(sr->sr.getState().getData().toPointer(BondState.class))
+                .map(p->p.getPointer().resolve(serviceHub).getState().getData())
+                .filter(ts-> ts.getCreditRating().equals(rating) &&
+                        ts.getBondStatus().equals(BondStatus.ACTIVE.name()))
+                .collect(Collectors.toList());
+    }
+
 }

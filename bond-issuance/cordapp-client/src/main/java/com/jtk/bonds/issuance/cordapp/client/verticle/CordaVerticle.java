@@ -2,6 +2,8 @@ package com.jtk.bonds.issuance.cordapp.client.verticle;
 
 import com.jtk.bond.issuance.flows.CreateAndIssueTermFlow;
 import com.jtk.bond.issuance.flows.QueryBondTermsFlow;
+import com.jtk.bond.issuance.flows.QueryBondsFlow;
+import com.jtk.bond.issuance.flows.RequestForBondInitiatorFlow;
 import com.jtk.bonds.issuance.cordapp.client.utils.NodeRPCConnection;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -10,6 +12,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import net.corda.core.contracts.ContractState;
+import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.CordaX500Name;
 import net.corda.core.node.NodeInfo;
 import org.slf4j.Logger;
@@ -56,7 +59,8 @@ public class CordaVerticle extends AbstractVerticle {
             JsonObject json = event.body();
             String url = json.getString("url");
             JsonObject responseJson = new JsonObject();
-            vertx.executeBlocking(e1 -> {
+            vertx.executeBlocking(e1 ->
+            {
                         switch (url) {
                             case "addresses":
                                 responseJson.put("msg", nodeRPC.proxy().nodeInfo().getAddresses().toString());
@@ -98,77 +102,37 @@ public class CordaVerticle extends AbstractVerticle {
                                     responseJson.put("msg", response);
                                 } catch (InterruptedException e) {
                                     log.error("Exception query Corda", e);
+                                    e1.fail(e);
+                                    return;
                                 } catch (ExecutionException e) {
                                     log.error("Exception query Corda", e);
+                                    e1.fail(e);
+                                    return;
                                 }
                                 break;
                             case "query-bond-terms":
-                                String qType = json.getString("queryType");
-                                String jsonResponse = "";
-
-                                if(qType.equalsIgnoreCase("byCurrency")){
-                                    String currency = json.getString("queryValue");
-                                    try {
-                                        jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
-                                                (QueryBondTermsFlow.GetBondTermsByCurrency.class, currency)
-                                                .getReturnValue().get();
-                                    } catch (InterruptedException e) {
-                                        log.error("Exception query Corda", e);
-                                    } catch (ExecutionException e) {
-                                        log.error("Exception query Corda", e);
-                                    }
-                                    responseJson.put("msg", jsonResponse);
-
-                                } else if (qType.equalsIgnoreCase("byRating")) {
-                                    String creditRating = json.getString("queryValue");
-                                    try {
-                                        jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
-                                                        (QueryBondTermsFlow.GetBondTermsByRating.class, creditRating)
-                                                .getReturnValue().get();
-                                    } catch (InterruptedException e) {
-                                        log.error("Exception query Corda", e);
-                                    } catch (ExecutionException e) {
-                                        log.error("Exception query Corda", e);
-                                    }
-                                    responseJson.put("msg", jsonResponse);
-
-                                } else if (qType.equalsIgnoreCase("lessThanMaturityDate")) {
-                                    String maturityDate = json.getString("queryValue");
-                                    try {
-                                        jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
-                                                        (QueryBondTermsFlow.GetBondTermsLessThanMaturityDate.class, maturityDate)
-                                                .getReturnValue().get();
-                                    } catch (InterruptedException e) {
-                                        log.error("Exception query Corda", e);
-                                    } catch (ExecutionException e) {
-                                        log.error("Exception query Corda", e);
-                                    }
-                                    responseJson.put("msg", jsonResponse);
-                                } else if (qType.equalsIgnoreCase("greaterThanMaturityDate")) {
-                                    String maturityDate = json.getString("queryValue");
-                                    try {
-                                        jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
-                                                        (QueryBondTermsFlow.GetBondTermsGreaterThanMaturityDate.class, maturityDate)
-                                                .getReturnValue().get();
-                                    } catch (InterruptedException e) {
-                                        log.error("Exception query Corda", e);
-                                    } catch (ExecutionException e) {
-                                        log.error("Exception query Corda", e);
-                                    }
-                                    responseJson.put("msg", jsonResponse);
-
-                                } else if (qType.equalsIgnoreCase("byTeamStateLinearID")) {
-                                    String teamStateLinearID = json.getString("queryValue");
-                                    try {
-                                        jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
-                                                        (QueryBondTermsFlow.GetBondTermByTeamStateLinearID.class, teamStateLinearID)
-                                                .getReturnValue().get();
-                                    } catch (InterruptedException e) {
-                                        log.error("Exception query Corda", e);
-                                    } catch (ExecutionException e) {
-                                        log.error("Exception query Corda", e);
-                                    }
-                                    responseJson.put("msg", jsonResponse);
+                                queryBondTerms(json, responseJson);
+                                break;
+                            case "query-bonds":
+                                queryBond(json, responseJson);
+                                break;
+                            case "request-for-bond":
+                                String teamStateLinearID = json.getString("teamStateLinearID");
+                                int unitsOfBonds = json.getInteger("unitsOfBonds");
+                                try {
+                                    String returnMsg = nodeRPC.proxy()
+                                            .startTrackedFlowDynamic(RequestForBondInitiatorFlow.class,
+                                                    UniqueIdentifier.Companion.fromString(teamStateLinearID),
+                                            unitsOfBonds).getReturnValue().get();
+                                    responseJson.put("msg", returnMsg);
+                                } catch (InterruptedException e) {
+                                    log.error("Exception query Corda", e);
+                                    e1.fail(e);
+                                    return;
+                                } catch (ExecutionException e) {
+                                    log.error("Exception query Corda", e);
+                                    e1.fail(e);
+                                    return;
                                 }
                                 break;
                             default:
@@ -176,13 +140,153 @@ public class CordaVerticle extends AbstractVerticle {
                                 break;
                         }
                         e1.complete(responseJson);
-                    }).onComplete(result -> {
+                    })
+                    .onComplete(result -> {
                         if (result.succeeded()) {
                             event.reply(result.result());
                         } else {
-                            event.fail(500, "Couldn't create Term...");
+                            event.fail(500, "Couldnt successfully process request...");
                         }
                     });
+        }
+
+        private void queryBondTerms(JsonObject json, JsonObject responseJson) {
+            String qType = json.getString("queryType");
+            String jsonResponse = "";
+
+            if(qType.equalsIgnoreCase("byCurrency")){
+                String currency = json.getString("queryValue");
+                try {
+                    jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
+                            (QueryBondTermsFlow.GetBondTermsByCurrency.class, currency)
+                            .getReturnValue().get();
+                } catch (InterruptedException e) {
+                    log.error("Exception query Corda", e);
+                } catch (ExecutionException e) {
+                    log.error("Exception query Corda", e);
+                }
+                responseJson.put("msg", jsonResponse);
+
+            } else if (qType.equalsIgnoreCase("byRating")) {
+                String creditRating = json.getString("queryValue");
+                try {
+                    jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
+                                    (QueryBondTermsFlow.GetBondTermsByRating.class, creditRating)
+                            .getReturnValue().get();
+                } catch (InterruptedException e) {
+                    log.error("Exception query Corda", e);
+                } catch (ExecutionException e) {
+                    log.error("Exception query Corda", e);
+                }
+                responseJson.put("msg", jsonResponse);
+
+            } else if (qType.equalsIgnoreCase("lessThanMaturityDate")) {
+                String maturityDate = json.getString("queryValue");
+                try {
+                    jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
+                                    (QueryBondTermsFlow.GetBondTermsLessThanMaturityDate.class, maturityDate)
+                            .getReturnValue().get();
+                } catch (InterruptedException e) {
+                    log.error("Exception query Corda", e);
+                } catch (ExecutionException e) {
+                    log.error("Exception query Corda", e);
+                }
+                responseJson.put("msg", jsonResponse);
+            } else if (qType.equalsIgnoreCase("greaterThanMaturityDate")) {
+                String maturityDate = json.getString("queryValue");
+                try {
+                    jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
+                                    (QueryBondTermsFlow.GetBondTermsGreaterThanMaturityDate.class, maturityDate)
+                            .getReturnValue().get();
+                } catch (InterruptedException e) {
+                    log.error("Exception query Corda", e);
+                } catch (ExecutionException e) {
+                    log.error("Exception query Corda", e);
+                }
+                responseJson.put("msg", jsonResponse);
+
+            } else if (qType.equalsIgnoreCase("byTeamStateLinearID")) {
+                String teamStateLinearID = json.getString("queryValue");
+                try {
+                    jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
+                                    (QueryBondTermsFlow.GetBondTermByTeamStateLinearID.class, teamStateLinearID)
+                            .getReturnValue().get();
+                } catch (InterruptedException e) {
+                    log.error("Exception query Corda", e);
+                } catch (ExecutionException e) {
+                    log.error("Exception query Corda", e);
+                }
+                responseJson.put("msg", jsonResponse);
+            }
+        }
+        private void queryBond(JsonObject json, JsonObject responseJson) {
+            String qType = json.getString("queryType");
+            String jsonResponse = "";
+
+            if(qType.equalsIgnoreCase("byCurrency")){
+                String currency = json.getString("queryValue");
+                try {
+                    jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
+                                    (QueryBondsFlow.GetBondsByCurrency.class, currency)
+                            .getReturnValue().get();
+                } catch (InterruptedException e) {
+                    log.error("Exception query Corda", e);
+                } catch (ExecutionException e) {
+                    log.error("Exception query Corda", e);
+                }
+                responseJson.put("msg", jsonResponse);
+
+            } else if (qType.equalsIgnoreCase("byRating")) {
+                String creditRating = json.getString("queryValue");
+                try {
+                    jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
+                                    (QueryBondsFlow.GetBondsByRating.class, creditRating)
+                            .getReturnValue().get();
+                } catch (InterruptedException e) {
+                    log.error("Exception query Corda", e);
+                } catch (ExecutionException e) {
+                    log.error("Exception query Corda", e);
+                }
+                responseJson.put("msg", jsonResponse);
+
+            } else if (qType.equalsIgnoreCase("lessThanMaturityDate")) {
+                String maturityDate = json.getString("queryValue");
+                try {
+                    jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
+                                    (QueryBondsFlow.GetBondLessThanMaturityDate.class, maturityDate)
+                            .getReturnValue().get();
+                } catch (InterruptedException e) {
+                    log.error("Exception query Corda", e);
+                } catch (ExecutionException e) {
+                    log.error("Exception query Corda", e);
+                }
+                responseJson.put("msg", jsonResponse);
+            } else if (qType.equalsIgnoreCase("greaterThanMaturityDate")) {
+                String maturityDate = json.getString("queryValue");
+                try {
+                    jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
+                                    (QueryBondsFlow.GetBondGreaterThanMaturityDate.class, maturityDate)
+                            .getReturnValue().get();
+                } catch (InterruptedException e) {
+                    log.error("Exception query Corda", e);
+                } catch (ExecutionException e) {
+                    log.error("Exception query Corda", e);
+                }
+                responseJson.put("msg", jsonResponse);
+
+            } else if (qType.equalsIgnoreCase("byTeamStateLinearID")) {
+                String teamStateLinearID = json.getString("queryValue");
+                try {
+                    jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
+                                    (QueryBondsFlow.GetBondByTermStateLinearID.class, teamStateLinearID)
+                            .getReturnValue().get();
+                } catch (InterruptedException e) {
+                    log.error("Exception query Corda", e);
+                } catch (ExecutionException e) {
+                    log.error("Exception query Corda", e);
+                }
+                responseJson.put("msg", jsonResponse);
+            }
         }
 
         private HashMap<String, String> whoami() {

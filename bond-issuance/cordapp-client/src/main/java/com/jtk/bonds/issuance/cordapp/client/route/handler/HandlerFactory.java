@@ -45,6 +45,24 @@ public class HandlerFactory {
                     vertx.eventBus()
                             .request("CORDA-API",createBT, handleCordaAPI(routingContext));
                 });
+        routerBuilder
+                .operation("query-bonds")
+                .handler(routingContext -> {
+                    RequestParameters params = routingContext.get("parsedParameters");
+                    JsonObject createBT = params.body().getJsonObject();
+                    createBT.put("url","query-bonds");
+                    vertx.eventBus()
+                            .request("CORDA-API",createBT, handleCordaAPI(routingContext));
+                });
+        routerBuilder
+                .operation("request-for-bond")
+                .handler(routingContext -> {
+                    RequestParameters params = routingContext.get("parsedParameters");
+                    JsonObject createBT = params.body().getJsonObject();
+                    createBT.put("url","request-for-bond");
+                    vertx.eventBus()
+                            .request("CORDA-API",createBT, handleCordaAPI(routingContext));
+                });
     }
 
     @NotNull
