@@ -6,6 +6,7 @@ plugins {
 dependencies {
     compile project(":contracts")
     compile project(":workflows")
+    compile "com.google.guava:guava:$guava_version"
 
     implementation(platform("io.vertx:vertx-stack-depchain:$vertx_version"))
     implementation("io.vertx:vertx-config")
@@ -13,12 +14,17 @@ dependencies {
     implementation("io.vertx:vertx-web-openapi")
     implementation("io.vertx:vertx-json-schema")
     implementation("io.vertx:vertx-web-api-contract")
+    implementation("org.apache.logging.log4j:log4j-api:$log4j_version")
+    implementation("org.apache.logging.log4j:log4j-core:$log4j_version")
+    implementation("org.apache.logging.log4j:log4j-slf4j-impl:$log4j_version")
+    implementation("org.slf4j:slf4j-api:1.7.34")
     testImplementation("io.vertx:vertx-junit5")
     testImplementation("org.junit.jupiter:junit-jupiter:$junit_jupiter_version")
 }
 
 shadowJar {
     manifest {
+        attributes 'Main-Class': "${main_class_name}"
         attributes 'Main-Verticle': "${main_class_name}"
         attributes 'Main-Command': 'run'
     }

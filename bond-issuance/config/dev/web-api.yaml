@@ -1,0 +1,36 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: WebAPP API
+servers:
+  - url: http://localhost:8888
+paths:
+  /hello:
+    get:
+      summary: Returns Hello ! from the APP
+      operationId: api-ping-hello
+      tags:
+        - ping
+      responses:
+        '200':
+          description: Response with Hello
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  date:
+                    type: string
+        default:
+          description: Unexpected Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  code:
+                    type: string
