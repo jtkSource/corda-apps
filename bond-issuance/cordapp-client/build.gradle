@@ -1,0 +1,28 @@
+plugins {
+    id 'com.github.johnrengelman.shadow'
+}
+
+
+dependencies {
+    compile project(":contracts")
+    compile project(":workflows")
+
+    implementation(platform("io.vertx:vertx-stack-depchain:$vertx_version"))
+    implementation("io.vertx:vertx-config")
+    implementation("io.vertx:vertx-web")
+    implementation("io.vertx:vertx-web-openapi")
+    implementation("io.vertx:vertx-json-schema")
+    implementation("io.vertx:vertx-web-api-contract")
+    testImplementation("io.vertx:vertx-junit5")
+    testImplementation("org.junit.jupiter:junit-jupiter:$junit_jupiter_version")
+}
+
+shadowJar {
+    manifest {
+        attributes 'Main-Verticle': "${main_class_name}"
+        attributes 'Main-Command': 'run'
+    }
+    mergeServiceFiles {
+        include 'META-INF/services/io.vertx.core.spi.VerticleFactory'
+    }
+}

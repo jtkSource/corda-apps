@@ -18,12 +18,18 @@ buildscript {
         tokens_release_version = constants.getProperty("tokensReleaseVersion")
         confidential_id_release_version = constants.getProperty("confidentialIdReleaseVersion")
         confidential_id_release_group = constants.getProperty("confidentialIdReleaseGroup")
+
+        // webserver dependencies
+        vertx_version = "4.3.2"
+        junit_jupiter_version = "5.7.0"
+        main_class_name = "com.jtk.bonds.issuance.cordapp_client.MainVerticle"
+
     }
 
     repositories {
         mavenLocal()
         mavenCentral()
-
+        maven { url "https://plugins.gradle.org/m2/" }
         maven { url 'https://software.r3.com/artifactory/corda' }
     }
 
@@ -31,6 +37,9 @@ buildscript {
         classpath "net.corda.plugins:cordapp:$corda_gradle_plugins_version"
         classpath "net.corda.plugins:cordformation:$corda_gradle_plugins_version"
         classpath "net.corda.plugins:quasar-utils:$corda_gradle_plugins_version"
+        classpath "net.corda.plugins:quasar-utils:$corda_gradle_plugins_version"
+        classpath "gradle.plugin.io.vertx:vertx-gradle-plugin:1.0.3"
+
     }
 }
 
@@ -49,6 +58,7 @@ allprojects {
         maven { url 'https://software.r3.com/artifactory/corda-lib-dev' }
         //Gradle Plugins
         maven { url 'https://repo.gradle.org/gradle/libs-releases' }
+        maven { url "https://plugins.gradle.org/m2/" }
     }
 
     tasks.withType(JavaCompile) {
@@ -87,6 +97,7 @@ dependencies {
     // CorDapp dependencies.
     cordapp project(":workflows")
     cordapp project(":contracts")
+    cordapp project(":cordapp-client")
 
     // For logging
     cordaCompile "org.apache.logging.log4j:log4j-slf4j-impl:${log4j_version}"
