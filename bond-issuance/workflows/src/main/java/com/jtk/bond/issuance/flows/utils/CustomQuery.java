@@ -82,6 +82,15 @@ public class CustomQuery {
                 .collect(Collectors.toList());
     }
 
+    public static StateAndRef<BondState> queryBondByLinearID(UniqueIdentifier bondStateLinearID, ServiceHub serviceHub) {
+        List<StateAndRef<BondState>> statesAndRef = serviceHub.getVaultService().queryBy(BondState.class).getStates();
+        return statesAndRef.stream()
+                .filter(sr-> sr.getState().getData().getBondStatus().equals(BondStatus.ACTIVE.name()))
+                .filter(sr-> sr.getState().getData().getLinearId().equals(bondStateLinearID))
+                .findAny()
+                .orElse(null);
+    }
+
     public static Collection<BondState> queryBondsPointerGreaterThanMaturityDate(String maturityDate, ServiceHub serviceHub) {
         List<StateAndRef<BondState>> statesAndRef = serviceHub.getVaultService().queryBy(BondState.class).getStates();
         return statesAndRef.stream()

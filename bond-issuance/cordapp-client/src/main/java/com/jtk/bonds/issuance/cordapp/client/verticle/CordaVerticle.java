@@ -1,12 +1,8 @@
 package com.jtk.bonds.issuance.cordapp.client.verticle;
 
-import com.jtk.bond.issuance.flows.CreateAndIssueTermFlow;
-import com.jtk.bond.issuance.flows.QueryBondTermsFlow;
-import com.jtk.bond.issuance.flows.QueryBondsFlow;
-import com.jtk.bond.issuance.flows.RequestForBondInitiatorFlow;
+import com.jtk.bond.issuance.flows.*;
 import com.jtk.bonds.issuance.cordapp.client.utils.NodeRPCConnection;
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
@@ -86,7 +82,7 @@ public class CordaVerticle extends AbstractVerticle {
                             case "states":
                                 responseJson.put("msg", nodeRPC.proxy().vaultQuery(ContractState.class).getStates().toString());
                                 break;
-                            case "create-bond-terms":
+                            case "issue-bond-terms":
                                 try {
                                     String returnMsg = nodeRPC.proxy().startTrackedFlowDynamic(CreateAndIssueTermFlow.class,
                                             json.getString("bondName"),
@@ -116,7 +112,7 @@ public class CordaVerticle extends AbstractVerticle {
                             case "query-bonds":
                                 queryBond(json, responseJson);
                                 break;
-                            case "request-for-bond":
+                            case "issue-bond":
                                 String teamStateLinearID = json.getString("teamStateLinearID");
                                 int unitsOfBonds = json.getInteger("unitsOfBonds");
                                 try {
@@ -125,6 +121,24 @@ public class CordaVerticle extends AbstractVerticle {
                                                     UniqueIdentifier.Companion.fromString(teamStateLinearID),
                                             unitsOfBonds).getReturnValue().get();
                                     responseJson.put("msg", returnMsg);
+                                } catch (InterruptedException e) {
+                                    log.error("Exception query Corda", e);
+                                    e1.fail(e);
+                                    return;
+                                } catch (ExecutionException e) {
+                                    log.error("Exception query Corda", e);
+                                    e1.fail(e);
+                                    return;
+                                }
+                                break;
+                            case "get-bond-tokens":
+                                String bondId = json.getString("bondId");
+                                try {
+                                    Long amount = nodeRPC.proxy()
+                                            .startTrackedFlowDynamic(QueryBondToken.GetTokenBalance.class,
+                                                    bondId).getReturnValue().get();
+                                    responseJson.put("msg", amount);
+
                                 } catch (InterruptedException e) {
                                     log.error("Exception query Corda", e);
                                     e1.fail(e);
@@ -209,7 +223,8 @@ public class CordaVerticle extends AbstractVerticle {
                 String teamStateLinearID = json.getString("queryValue");
                 try {
                     jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
-                                    (QueryBondTermsFlow.GetBondTermByTeamStateLinearID.class, teamStateLinearID)
+                                    (QueryBondTermsFlow.GetBondTermByTeamStateLinearID.class,
+                                            UniqueIdentifier.Companion.fromString(teamStateLinearID))
                             .getReturnValue().get();
                 } catch (InterruptedException e) {
                     log.error("Exception query Corda", e);
@@ -226,8 +241,8 @@ public class CordaVerticle extends AbstractVerticle {
             if(qType.equalsIgnoreCase("byCurrency")){
                 String currency = json.getString("queryValue");
                 try {
-                    jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
-                                    (QueryBondsFlow.GetBondsByCurrency.class, currency)
+                    jsonResponse = nodeRPC.proxy().
+                            startTrackedFlowDynamic(QueryBondsFlow.GetBondsByCurrency.class, currency)
                             .getReturnValue().get();
                 } catch (InterruptedException e) {
                     log.error("Exception query Corda", e);
@@ -239,8 +254,8 @@ public class CordaVerticle extends AbstractVerticle {
             } else if (qType.equalsIgnoreCase("byRating")) {
                 String creditRating = json.getString("queryValue");
                 try {
-                    jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
-                                    (QueryBondsFlow.GetBondsByRating.class, creditRating)
+                    jsonResponse = nodeRPC.proxy().
+                            startTrackedFlowDynamic(QueryBondsFlow.GetBondsByRating.class, creditRating)
                             .getReturnValue().get();
                 } catch (InterruptedException e) {
                     log.error("Exception query Corda", e);
@@ -252,8 +267,8 @@ public class CordaVerticle extends AbstractVerticle {
             } else if (qType.equalsIgnoreCase("lessThanMaturityDate")) {
                 String maturityDate = json.getString("queryValue");
                 try {
-                    jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
-                                    (QueryBondsFlow.GetBondLessThanMaturityDate.class, maturityDate)
+                    jsonResponse = nodeRPC.proxy().
+                            startTrackedFlowDynamic(QueryBondsFlow.GetBondLessThanMaturityDate.class, maturityDate)
                             .getReturnValue().get();
                 } catch (InterruptedException e) {
                     log.error("Exception query Corda", e);
@@ -264,8 +279,8 @@ public class CordaVerticle extends AbstractVerticle {
             } else if (qType.equalsIgnoreCase("greaterThanMaturityDate")) {
                 String maturityDate = json.getString("queryValue");
                 try {
-                    jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
-                                    (QueryBondsFlow.GetBondGreaterThanMaturityDate.class, maturityDate)
+                    jsonResponse = nodeRPC.proxy().
+                            startTrackedFlowDynamic(QueryBondsFlow.GetBondGreaterThanMaturityDate.class, maturityDate)
                             .getReturnValue().get();
                 } catch (InterruptedException e) {
                     log.error("Exception query Corda", e);
@@ -277,8 +292,9 @@ public class CordaVerticle extends AbstractVerticle {
             } else if (qType.equalsIgnoreCase("byTeamStateLinearID")) {
                 String teamStateLinearID = json.getString("queryValue");
                 try {
-                    jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
-                                    (QueryBondsFlow.GetBondByTermStateLinearID.class, teamStateLinearID)
+                    jsonResponse = nodeRPC.proxy().
+                            startTrackedFlowDynamic(QueryBondsFlow.GetBondByTermStateLinearID.class,
+                                    UniqueIdentifier.Companion.fromString(teamStateLinearID))
                             .getReturnValue().get();
                 } catch (InterruptedException e) {
                     log.error("Exception query Corda", e);

@@ -28,11 +28,11 @@ public class HandlerFactory {
                            .request("CORDA-API",msg, handleCordaAPI(routingContext));
                 });
         routerBuilder
-                .operation("create-bond-terms")
+                .operation("issue-bond-terms")
                 .handler(routingContext -> {
                     RequestParameters params = routingContext.get("parsedParameters");
                     JsonObject createBT = params.body().getJsonObject();
-                    createBT.put("url","create-bond-terms");
+                    createBT.put("url","issue-bond-terms");
                     vertx.eventBus()
                             .request("CORDA-API",createBT, handleCordaAPI(routingContext));
                 });
@@ -55,13 +55,24 @@ public class HandlerFactory {
                             .request("CORDA-API",createBT, handleCordaAPI(routingContext));
                 });
         routerBuilder
-                .operation("request-for-bond")
+                .operation("issue-bond")
                 .handler(routingContext -> {
                     RequestParameters params = routingContext.get("parsedParameters");
                     JsonObject createBT = params.body().getJsonObject();
-                    createBT.put("url","request-for-bond");
+                    createBT.put("url","issue-bond");
                     vertx.eventBus()
                             .request("CORDA-API",createBT, handleCordaAPI(routingContext));
+                });
+        routerBuilder
+                .operation("get-bond-tokens")
+                .handler(routingContext -> {
+                    RequestParameters params = routingContext.get("parsedParameters");
+                    String bondId = params.pathParameter("bondId").getString();
+                    JsonObject msg = new JsonObject();
+                    msg.put("url","get-bond-tokens");
+                    msg.put("bondId",bondId);
+                    vertx.eventBus()
+                            .request("CORDA-API",msg, handleCordaAPI(routingContext));
                 });
     }
 

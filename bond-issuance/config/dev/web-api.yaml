@@ -34,10 +34,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/messageStatusCode'
-  /corda/terms:
+  /corda/terms/issue:
     post:
       summary: Create Bond Term
-      operationId: create-bond-terms
+      operationId: issue-bond-terms
       tags:
         - corda
         - create-term
@@ -100,6 +100,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/messageStatusCode'
+
+  /corda/bonds/issue:
+    post:
+      summary: POST API to issue bond
+      operationId: issue-bond
+      tags:
+        - corda
+        - issue-bond
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                teamStateLinearID:
+                  type: string
+                unitsOfBonds:
+                  type: integer
+      responses:
+        '200':
+          description: Response for Bond Issuance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+        '500':
+          description: The request has been accepted for processing, but the processing has not been completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/messageStatusCode'
   /corda/bonds/query:
     post:
       summary: API to query for Terms
@@ -140,42 +175,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/messageStatusCode'
-
-  /corda/bonds/issue:
-    post:
-      summary: POST API to issue bond
-      operationId: request-for-bond
+  /corda/bonds/tokens/${bondId}:
+    get:
+      summary: Get bond tokens issued to the user firing this query
+      operationId: get-bond-tokens
       tags:
         - corda
-        - issue-bond
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                teamStateLinearID:
-                  type: string
-                unitsOfBonds:
-                  type: integer
+        - query-bond-tokens
+      parameters:
+        - name: bondId
+          in: path
+          required: true
+          description: The linearId stored in corda for state objects
+          schema:
+            type: string
       responses:
         '200':
-          description: Response for Bond Issuance
+          description: Retrieve the total tokens on this bond
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  msg:
-                    type: string
+                  total:
+                    type: number
         '500':
           description: The request has been accepted for processing, but the processing has not been completed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/messageStatusCode'
-
 
 components:
   schemas:
