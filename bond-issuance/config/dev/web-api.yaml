@@ -81,7 +81,7 @@ paths:
                     - byRating
                     - lessThanMaturityDate
                     - greaterThanMaturityDate
-                    - byTeamStateLinearID
+                    - byTermStateLinearID
                 queryValue:
                   type: string
       responses:
@@ -100,7 +100,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/messageStatusCode'
-
   /corda/bonds/issue:
     post:
       summary: POST API to issue bond
@@ -156,7 +155,7 @@ paths:
                     - byRating
                     - lessThanMaturityDate
                     - greaterThanMaturityDate
-                    - byTeamStateLinearID
+                    - byTermStateLinearID
                 queryValue:
                   type: string
       responses:
@@ -175,7 +174,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/messageStatusCode'
-  /corda/bonds/tokens/${bondId}:
+  /corda/bonds/tokens/{termId}:
     get:
       summary: Get bond tokens issued to the user firing this query
       operationId: get-bond-tokens
@@ -183,7 +182,7 @@ paths:
         - corda
         - query-bond-tokens
       parameters:
-        - name: bondId
+        - name: termId
           in: path
           required: true
           description: The linearId stored in corda for state objects
@@ -204,7 +203,7 @@ paths:
           content:
             application/json:
               schema:
-
+                $ref: '#/components/schemas/messageStatusCode'
 components:
   schemas:
     termRequest:

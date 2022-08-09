@@ -132,13 +132,15 @@ public class CordaVerticle extends AbstractVerticle {
                                 }
                                 break;
                             case "get-bond-tokens":
-                                String bondId = json.getString("bondId");
+                                String termId = json.getString("termId");
+                                log.info("tokens for bonds on termId {}",termId);
                                 try {
                                     Long amount = nodeRPC.proxy()
-                                            .startTrackedFlowDynamic(QueryBondToken.GetTokenBalance.class,
-                                                    bondId).getReturnValue().get();
-                                    responseJson.put("msg", amount);
-
+                                            .startTrackedFlowDynamic(QueryBondToken.GetTokenSum.class, termId)
+                                            .getReturnValue()
+                                            .get();
+                                    log.info("Retrieved sum: {} ", amount);
+                                    responseJson.put("msg", String.format("{\"total\": %s}",amount.toString()));
                                 } catch (InterruptedException e) {
                                     log.error("Exception query Corda", e);
                                     e1.fail(e);
@@ -219,11 +221,11 @@ public class CordaVerticle extends AbstractVerticle {
                 }
                 responseJson.put("msg", jsonResponse);
 
-            } else if (qType.equalsIgnoreCase("byTeamStateLinearID")) {
+            } else if (qType.equalsIgnoreCase("byTermStateLinearID")) {
                 String teamStateLinearID = json.getString("queryValue");
                 try {
                     jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
-                                    (QueryBondTermsFlow.GetBondTermByTeamStateLinearID.class,
+                                    (QueryBondTermsFlow.GetBondTermByTermStateLinearID.class,
                                             UniqueIdentifier.Companion.fromString(teamStateLinearID))
                             .getReturnValue().get();
                 } catch (InterruptedException e) {
@@ -251,7 +253,8 @@ public class CordaVerticle extends AbstractVerticle {
                 }
                 responseJson.put("msg", jsonResponse);
 
-            } else if (qType.equalsIgnoreCase("byRating")) {
+            }
+            else if (qType.equalsIgnoreCase("byRating")) {
                 String creditRating = json.getString("queryValue");
                 try {
                     jsonResponse = nodeRPC.proxy().
@@ -264,7 +267,8 @@ public class CordaVerticle extends AbstractVerticle {
                 }
                 responseJson.put("msg", jsonResponse);
 
-            } else if (qType.equalsIgnoreCase("lessThanMaturityDate")) {
+            }
+            else if (qType.equalsIgnoreCase("lessThanMaturityDate")) {
                 String maturityDate = json.getString("queryValue");
                 try {
                     jsonResponse = nodeRPC.proxy().
@@ -276,7 +280,8 @@ public class CordaVerticle extends AbstractVerticle {
                     log.error("Exception query Corda", e);
                 }
                 responseJson.put("msg", jsonResponse);
-            } else if (qType.equalsIgnoreCase("greaterThanMaturityDate")) {
+            }
+            else if (qType.equalsIgnoreCase("greaterThanMaturityDate")) {
                 String maturityDate = json.getString("queryValue");
                 try {
                     jsonResponse = nodeRPC.proxy().
@@ -289,7 +294,8 @@ public class CordaVerticle extends AbstractVerticle {
                 }
                 responseJson.put("msg", jsonResponse);
 
-            } else if (qType.equalsIgnoreCase("byTeamStateLinearID")) {
+            }
+            else if (qType.equalsIgnoreCase("byTermStateLinearID")) {
                 String teamStateLinearID = json.getString("queryValue");
                 try {
                     jsonResponse = nodeRPC.proxy().

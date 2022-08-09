@@ -120,14 +120,13 @@ public class FlowTests {
         log.info("Response to term: {} ->:\n {}",termLinearId, json.toString(2));
 
 
-        CordaFuture<String> bondByLinearId = observerNode.startFlow(new QueryBondTermsFlow.
-                GetBondTermByTeamStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId)));
+        CordaFuture<String> bondByLinearId = observerNode.startFlow(new QueryBondTermsFlow.GetBondTermByTermStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId)));
         JSONObject jsonStr = (JSONObject) new JSONTokener(bondByLinearId.get()).nextValue();
         log.info("QueryResponse ->:\n {}",json.toString(2));
         assertEquals(termLinearId, jsonStr.getString("linearId"));
 
 
-        bondByLinearId = hsbcNode.startFlow(new QueryBondTermsFlow.GetBondTermByTeamStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId)));
+        bondByLinearId = hsbcNode.startFlow(new QueryBondTermsFlow.GetBondTermByTermStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId)));
         jsonStr = (JSONObject) new JSONTokener(bondByLinearId.get()).nextValue();
         log.info("QueryResponse ->:\n {}",json.toString(2));
         assertEquals(termLinearId, jsonStr.getString("linearId"));

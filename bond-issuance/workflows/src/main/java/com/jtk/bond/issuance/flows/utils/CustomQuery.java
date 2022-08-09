@@ -63,11 +63,11 @@ public class CustomQuery {
                 .collect(Collectors.toList());
     }
 
-    public static StateAndRef<TermState> queryTermsByTeamStateLinearID(UniqueIdentifier teamStateLinearID, ServiceHub serviceHub) {
+    public static StateAndRef<TermState> queryTermsByTermStateLinearID(UniqueIdentifier teamStateLinearID, ServiceHub serviceHub) {
         List<StateAndRef<TermState>> statesAndRef = serviceHub.getVaultService().queryBy(TermState.class).getStates();
         return statesAndRef.stream()
-                .filter(sr-> sr.getState().getData().getBondStatus().equals(BondStatus.ACTIVE.name()))
-                .filter(sr-> sr.getState().getData().getLinearId().equals(teamStateLinearID))
+                .filter(sr -> sr.getState().getData().getLinearId().equals(teamStateLinearID))
+                .filter(sr -> sr.getState().getData().getBondStatus().equals(BondStatus.ACTIVE.name()))
                 .findAny()
                 .orElseThrow(()-> new IllegalArgumentException("TeamStateLinearID ="+teamStateLinearID.toString()+ " not found from vault"));
     }

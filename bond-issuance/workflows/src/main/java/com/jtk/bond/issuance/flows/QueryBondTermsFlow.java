@@ -110,11 +110,11 @@ public class QueryBondTermsFlow {
 
     @InitiatingFlow
     @StartableByRPC
-    public static class GetBondTermByTeamStateLinearID extends FlowLogic<String>{
+    public static class GetBondTermByTermStateLinearID extends FlowLogic<String>{
         private final ProgressTracker progressTracker = new ProgressTracker();
         private final UniqueIdentifier teamStateLinearID;
 
-        public GetBondTermByTeamStateLinearID(UniqueIdentifier teamStateLinearID) {
+        public GetBondTermByTermStateLinearID(UniqueIdentifier teamStateLinearID) {
             this.teamStateLinearID = teamStateLinearID;
         }
         @Override
@@ -124,7 +124,7 @@ public class QueryBondTermsFlow {
         @Override
         @Suspendable
         public String call() {
-            StateAndRef<TermState> termSateAndRef = CustomQuery.queryTermsByTeamStateLinearID(teamStateLinearID, getServiceHub());
+            StateAndRef<TermState> termSateAndRef = CustomQuery.queryTermsByTermStateLinearID(teamStateLinearID, getServiceHub());
             return termSateAndRef.getState().getData().toPointer().getPointer()
                     .resolve(getServiceHub()).getState().getData().toJson();
         }

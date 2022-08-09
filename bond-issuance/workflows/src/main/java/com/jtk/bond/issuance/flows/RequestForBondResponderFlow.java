@@ -2,23 +2,19 @@ package com.jtk.bond.issuance.flows;
 
 import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.jtk.bond.issuance.constants.CordaParties;
 import com.jtk.bond.issuance.flows.utils.CustomQuery;
 import com.jtk.bond.issuance.state.BondState;
 import com.jtk.bond.issuance.state.TermState;
 import com.jtk.corda.Utility;
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
-import com.r3.corda.lib.tokens.workflows.flows.issue.IssueTokensUtilities;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.CreateEvolvableTokens;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.IssueTokens;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.UpdateEvolvableToken;
 import com.r3.corda.lib.tokens.workflows.utilities.FungibleTokenBuilder;
-import net.corda.core.contracts.ReferencedStateAndRef;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.TransactionState;
 import net.corda.core.contracts.UniqueIdentifier;
-import net.corda.core.flows.CollectSignaturesFlow;
 import net.corda.core.flows.FinalityFlow;
 import net.corda.core.flows.FlowException;
 import net.corda.core.flows.FlowLogic;
@@ -30,7 +26,6 @@ import net.corda.core.identity.Party;
 import net.corda.core.node.services.IdentityService;
 import net.corda.core.serialization.CordaSerializable;
 import net.corda.core.transactions.SignedTransaction;
-import net.corda.core.transactions.TransactionBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +57,7 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
         TermState investorTermState = investorTermStateRef.getState().getData();
 
         //query for the current TermStateAndRef
-        StateAndRef<TermState> currentTermStateAndRef = CustomQuery.queryTermsByTeamStateLinearID
+        StateAndRef<TermState> currentTermStateAndRef = CustomQuery.queryTermsByTermStateLinearID
                         (investorTermState.getLinearId(), getServiceHub())
                 .getState().getData().toPointer()
                 .getPointer()

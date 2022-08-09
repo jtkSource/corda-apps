@@ -3,35 +3,23 @@ package com.jtk.bond.issuance.flows;
 import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.collect.ImmutableList;
 import com.jtk.bond.issuance.flows.utils.CustomQuery;
-import com.jtk.bond.issuance.state.BondState;
 import com.jtk.bond.issuance.state.TermState;
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
 import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType;
 import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.StateAndRef;
-import net.corda.core.contracts.StateRef;
 import net.corda.core.contracts.UniqueIdentifier;
-import net.corda.core.crypto.SecureHash;
 import net.corda.core.flows.FlowException;
 import net.corda.core.flows.FlowLogic;
 import net.corda.core.flows.FlowSession;
 import net.corda.core.flows.InitiatingFlow;
 import net.corda.core.flows.ReceiveFinalityFlow;
 import net.corda.core.flows.SendStateAndRefFlow;
-import net.corda.core.flows.SignTransactionFlow;
 import net.corda.core.flows.StartableByRPC;
-import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
-import net.corda.core.utilities.ProgressTracker;
-import org.checkerframework.checker.units.qual.A;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-
-import static net.corda.core.contracts.ContractsDSL.requireThat;
 
 @InitiatingFlow
 @StartableByRPC
@@ -56,7 +44,7 @@ public class RequestForBondInitiatorFlow extends FlowLogic<String> {
         }
 
         //find term based on linearID and see if the requested amount is available
-        StateAndRef<TermState> termStateAndRef = CustomQuery.queryTermsByTeamStateLinearID
+        StateAndRef<TermState> termStateAndRef = CustomQuery.queryTermsByTermStateLinearID
                 (teamStateLinearID, getServiceHub());
 
         if (termStateAndRef != null) {

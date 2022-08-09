@@ -63,14 +63,13 @@ public class HandlerFactory {
                     vertx.eventBus()
                             .request("CORDA-API",createBT, handleCordaAPI(routingContext));
                 });
-        routerBuilder
-                .operation("get-bond-tokens")
+        routerBuilder.operation("get-bond-tokens")
                 .handler(routingContext -> {
                     RequestParameters params = routingContext.get("parsedParameters");
-                    String bondId = params.pathParameter("bondId").getString();
+                    String bondId = params.pathParameter("termId").getString();
                     JsonObject msg = new JsonObject();
                     msg.put("url","get-bond-tokens");
-                    msg.put("bondId",bondId);
+                    msg.put("termId",bondId);
                     vertx.eventBus()
                             .request("CORDA-API",msg, handleCordaAPI(routingContext));
                 });
