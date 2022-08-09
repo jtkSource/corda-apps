@@ -158,20 +158,11 @@ public class FlowTests {
 
         String identifier = json.getString("tokenIdentifier");
 
-        String bondStateJson = hsbcNode.startFlow(new QueryBondsFlow.GetBondByTermStateLinearID(UniqueIdentifier.Companion.fromString(identifier)))
+        String bondStateJson = hsbcNode.startFlow(new QueryBondsFlow.GetBondByTermStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId)))
                 .get();
-        json = (JSONObject) new JSONTokener(bondStateJson).nextValue();
-        log.info("Bond State JSON {}", json);
-        assertEquals("RFB-GS-TEST1",json.getString("bondName"));
-        bondStateJson = observerNode.startFlow(new QueryBondsFlow.GetBondByTermStateLinearID(UniqueIdentifier.Companion.fromString(identifier)))
-                .get();
-        json = (JSONObject) new JSONTokener(bondStateJson).nextValue();
-        log.info("Bond State JSON {}", json);
-        assertEquals("RFB-GS-TEST1",json.getString("bondName"));
-        bondStateJson = gsNode.startFlow(new QueryBondsFlow.GetBondByTermStateLinearID(UniqueIdentifier.Companion.fromString(identifier)))
-                .get();
-        json = (JSONObject) new JSONTokener(bondStateJson).nextValue();
-        log.info("Bond State JSON {}", json);
+        JSONArray jsonArray = (JSONArray) new JSONTokener(bondStateJson).nextValue();
+        log.info("Bond States JSON {}", jsonArray);
+        json = jsonArray.getJSONObject(0);
         assertEquals("RFB-GS-TEST1",json.getString("bondName"));
         assertEquals(termLinearId, json.getString("termStateLinearID"));
     }

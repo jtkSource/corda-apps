@@ -1,5 +1,5 @@
 {
-  "http.server.port": 9091,
+  "http.server.port": 9093,
   "welcome.message": "Hello from Node SGX!!",
   "vertx.worker.executetime.ms": 3000,
   "vertx.worker.pool.size": 5,

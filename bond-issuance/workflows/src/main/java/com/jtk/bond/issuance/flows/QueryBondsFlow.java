@@ -3,7 +3,6 @@ package com.jtk.bond.issuance.flows;
 import co.paralleluniverse.fibers.Suspendable;
 import com.jtk.bond.issuance.flows.utils.CustomQuery;
 import com.jtk.bond.issuance.state.BondState;
-import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.FlowLogic;
 import net.corda.core.flows.InitiatingFlow;
@@ -30,9 +29,11 @@ public class QueryBondsFlow {
         @Override
         @Suspendable
         public String call() {
-            StateAndRef<BondState> termSateAndRef = CustomQuery.queryBondByTeamStateLinearID(teamStateLinearID, getServiceHub());
-            return termSateAndRef.getState().getData().toPointer().getPointer()
-                    .resolve(getServiceHub()).getState().getData().toJson();
+            return CustomQuery.queryBondByTeamStateLinearID(teamStateLinearID, getServiceHub())
+                    .stream()
+                    .map(BondState::toJson)
+                    .collect(Collectors.toList())
+                    .toString();
         }
     }
 

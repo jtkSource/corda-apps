@@ -72,13 +72,14 @@ public class CustomQuery {
                 .orElseThrow(()-> new IllegalArgumentException("TeamStateLinearID ="+teamStateLinearID.toString()+ " not found from vault"));
     }
 
-    public static StateAndRef<BondState> queryBondByTeamStateLinearID(UniqueIdentifier uniqueIdentifier, ServiceHub serviceHub) {
+    public static List<BondState> queryBondByTeamStateLinearID(UniqueIdentifier uniqueIdentifier, ServiceHub serviceHub) {
         List<StateAndRef<BondState>> statesAndRef = serviceHub.getVaultService().queryBy(BondState.class).getStates();
         return statesAndRef.stream()
-                .filter(sr-> sr.getState().getData().getBondStatus().equals(BondStatus.ACTIVE.name()))
-                .filter(sr-> sr.getState().getData().getLinearId().equals(uniqueIdentifier))
-                .findAny()
-                .orElseThrow(()-> new IllegalArgumentException("BondStateLinearID="+uniqueIdentifier.toString()+ " not found from vault"));
+                .map(sr->sr.getState().getData().toPointer(BondState.class))
+                .map(p->p.getPointer().resolve(serviceHub).getState().getData())
+                .filter(bs-> bs.getBondStatus().equals(BondStatus.ACTIVE.name()))
+                .filter(bs-> bs.getTermStateLinearID().equals(uniqueIdentifier))
+                .collect(Collectors.toList());
     }
 
     public static Collection<BondState> queryBondsPointerGreaterThanMaturityDate(String maturityDate, ServiceHub serviceHub) {

@@ -30,15 +30,12 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
     private final Set<Party> investors; // the investors who brought the bond
     private final String bondStatus; // state of the bond
     private final String bondName; // Name of bond cannot be changed
-
     private final String currency;
     private final int couponPaymentLeft; // number of coupon payments left
     private final double interestRate; // current interest rate for the bonds
     private final double purchasePrice; // current price of the bond
     private final String maturityDate; // Maturity date of the bond
-
     private final String creditRating; // credit rating of the bond
-
     private final int totalUnits; // the total number of units allowed by this term when created = unitsAvailable
     private final int unitsAvailable; // number of units available - reduces with every bond state that is created
                                       //  value = totalUnits...0
@@ -46,7 +43,6 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
                                            //  value = 0...totalUnits
     private final String bondType;
     private final UniqueIdentifier linearId; // identifier of the bond
-
     public TermState(Party issuer, Set<Party> investors, String bondName, String bondStatus,
                      int couponPaymentLeft, double interestRate, double purchasePrice,
                      int unitsAvailable, int redemptionAvailable, UniqueIdentifier linearId,
