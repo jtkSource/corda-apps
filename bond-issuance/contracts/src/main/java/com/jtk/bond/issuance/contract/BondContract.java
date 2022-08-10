@@ -47,7 +47,8 @@ public class BondContract extends EvolvableTokenContract implements Contract {
             req.using("BondState Status cannot be empty", (!bondState.getBondStatus().isEmpty()));
             req.using("BondState Coupon payment left cannot be less than zero", (bondState.getCouponPaymentLeft()>=0));
             req.using("BondState Interest rate payment cannot be less than 0",(bondState.getInterestRate() >= 0.0));
-            req.using("BondState Interest purchase price cannot be less than 0",(bondState.getPurchasePrice() >= 0.0));
+            req.using("BondState Interest parValue cannot be less than 100 and greater than 1000",
+                    (bondState.getParValue() >= 100 && bondState.getParValue() <= 1000));
             req.using("BondState maturity date cannot be null", (bondState.getMaturityDate()!=null));
             LocalDate date = null;
             try {

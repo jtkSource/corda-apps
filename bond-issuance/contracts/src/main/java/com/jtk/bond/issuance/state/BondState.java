@@ -21,7 +21,7 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
     private final Party issuer;
     private final Party investor;
     private final double interestRate;
-    private final double purchasePrice;
+    private final int parValue;
     private final String maturityDate;
     private final String creditRating;
     private final double couponPaymentLeft;
@@ -38,14 +38,14 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
     private final UniqueIdentifier termStateLinearID;
     private final UniqueIdentifier linearId;
 
-    public BondState(Party issuer, Party investor, double interestRate, double purchasePrice, String maturityDate,
-                     String creditRating, double couponPaymentLeft,String bondStatus,String bondType,String currency,
+    public BondState(Party issuer, Party investor, double interestRate, int parValue, String maturityDate,
+                     String creditRating, double couponPaymentLeft, String bondStatus, String bondType, String currency,
                      String bondName, UniqueIdentifier termStateLinearID,
                      UniqueIdentifier linearId, int paymentsPerYear) {
         this.issuer = issuer;
         this.investor = investor;
         this.interestRate = interestRate;
-        this.purchasePrice = purchasePrice;
+        this.parValue = parValue;
         this.maturityDate = maturityDate;
         this.creditRating = creditRating;
         this.bondStatus = bondStatus;
@@ -85,8 +85,8 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
         return interestRate;
     }
 
-    public double getPurchasePrice() {
-        return purchasePrice;
+    public int getParValue() {
+        return parValue;
     }
 
     public String getMaturityDate() {
@@ -164,7 +164,7 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
         sb.append("issuer=").append(issuer);
         sb.append(", investor=").append(investor);
         sb.append(", interestRate=").append(interestRate);
-        sb.append(", purchasePrice=").append(purchasePrice);
+        sb.append(", parValue=").append(parValue);
         sb.append(", maturityDate='").append(maturityDate).append('\'');
         sb.append(", creditRating='").append(creditRating).append('\'');
         sb.append(", couponPaymentLeft=").append(couponPaymentLeft);
@@ -184,7 +184,7 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
         sb.append("\"issuer\":").append("\"").append(issuer).append("\"");
         sb.append(",\"investor\":").append("\"").append(investor).append("\"");
         sb.append(",\"interestRate\":").append(interestRate);
-        sb.append(",\"purchasePrice\":").append(purchasePrice);
+        sb.append(",\"parValue\":").append(parValue);
         sb.append(",\"maturityDate\":").append("\"").append(maturityDate).append("\"");
         sb.append(",\"creditRating\":").append("\"").append(creditRating).append("\"");
         sb.append(",\"couponPaymentLeft\":").append(couponPaymentLeft);

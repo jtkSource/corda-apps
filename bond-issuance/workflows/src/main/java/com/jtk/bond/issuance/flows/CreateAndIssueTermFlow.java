@@ -37,7 +37,7 @@ public class CreateAndIssueTermFlow extends FlowLogic<String> {
     private final String bondName; // Name of bond cannot be changed
     private final int couponPaymentLeft; // number of coupon payments left
     private final double interestRate; // current interest rate for the bonds
-    private final double purchasePrice; // current price of the bond
+    private final int parValue; // current price of the bond
     private final int unitsAvailable; // number of units available - reduces with every bond that is brought
     private final String maturityDate;
     private final String bondType;
@@ -48,14 +48,14 @@ public class CreateAndIssueTermFlow extends FlowLogic<String> {
 
 
     public CreateAndIssueTermFlow(String bondName, int couponPaymentLeft,
-                                  double interestRate, double purchasePrice, int unitsAvailable,
+                                  double interestRate, int parValue, int unitsAvailable,
                                   String maturityDate, String bondType, String currency,
                                   String creditRating, int paymentsPerYear)
     {
         this.bondName = bondName;
         this.couponPaymentLeft = couponPaymentLeft;
         this.interestRate = interestRate;
-        this.purchasePrice = purchasePrice;
+        this.parValue = parValue;
         this.unitsAvailable = unitsAvailable;
         this.maturityDate = maturityDate;
         this.bondType = bondType;
@@ -87,7 +87,7 @@ public class CreateAndIssueTermFlow extends FlowLogic<String> {
 
         final TermState termState = new TermState(
                 company, new HashSet<>(), bondName, BondStatus.ACTIVE.name(),
-                couponPaymentLeft, interestRate, purchasePrice,
+                couponPaymentLeft, interestRate, parValue,
                 unitsAvailable, 0,new UniqueIdentifier(),
                 this.maturityDate, this.bondType, this.currency,
                 this.creditRating,this.paymentsPerYear);
@@ -113,9 +113,9 @@ public class CreateAndIssueTermFlow extends FlowLogic<String> {
         log.info("Done CreateAndIssueTerm...");
         String jsnStr = String.format("{\"transactionID\":\"%s\"" +
                         ",\"bondName\":\"%s\"" +
-                        ",\"purchasePrice\":%s" +
+                        ",\"parValue\":%s" +
                         ",\"linearId\":\"%s\"}",
-                stx.getId(), this.bondName, this.purchasePrice, termState.getLinearId());
+                stx.getId(), this.bondName, this.parValue, termState.getLinearId());
         return "Generated 1 term >"+jsnStr;
     }
 }

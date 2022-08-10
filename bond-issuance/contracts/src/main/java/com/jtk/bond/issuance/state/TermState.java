@@ -33,7 +33,7 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
     private final String currency;
     private final int couponPaymentLeft; // number of coupon payments left
     private final double interestRate; // current interest rate for the bonds
-    private final double purchasePrice; // current price of the bond
+    private final int parValue; // current price of the bond - faceValue
     private final String maturityDate; // Maturity date of the bond
     private final String creditRating; // credit rating of the bond
     private final int totalUnits; // the total number of units allowed by this term when created = unitsAvailable
@@ -46,7 +46,7 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
     private final String bondType;
     private final UniqueIdentifier linearId; // identifier of the bond
     public TermState(Party issuer, Set<Party> investors, String bondName, String bondStatus,
-                     int couponPaymentLeft, double interestRate, double purchasePrice,
+                     int couponPaymentLeft, double interestRate, int parValue,
                      int unitsAvailable, int redemptionAvailable, UniqueIdentifier linearId,
                      String maturityDate, String bondType, String currency, String creditRating,
                      int paymentsPerYear) {
@@ -59,7 +59,7 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         this.couponPaymentLeft = couponPaymentLeft;
         this.paymentsPerYear = paymentsPerYear;
         this.interestRate = interestRate;
-        this.purchasePrice = purchasePrice;
+        this.parValue = parValue;
         this.maturityDate = maturityDate;
         this.creditRating = creditRating;
         this.unitsAvailable = unitsAvailable;
@@ -96,6 +96,7 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         return bondStatus;
     }
 
+    @Deprecated // don't see any use for it
     public int getCouponPaymentLeft() {
         return couponPaymentLeft;
     }
@@ -104,8 +105,8 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         return interestRate;
     }
 
-    public double getPurchasePrice() {
-        return purchasePrice;
+    public int getParValue() {
+        return parValue;
     }
 
     public int getUnitsAvailable() {
@@ -182,7 +183,7 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         sb.append(", currency='").append(currency).append('\'');
         sb.append(", couponPaymentLeft=").append(couponPaymentLeft);
         sb.append(", interestRate=").append(interestRate);
-        sb.append(", purchasePrice=").append(purchasePrice);
+        sb.append(", parValue=").append(parValue);
         sb.append(", maturityDate='").append(maturityDate).append('\'');
         sb.append(", creditRating='").append(creditRating).append('\'');
         sb.append(", totalUnits=").append(totalUnits);
@@ -212,7 +213,7 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         sb.append(",\"currency\":").append("\"").append(currency).append("\"");
         sb.append(",\"couponPaymentLeft\":").append(couponPaymentLeft);
         sb.append(",\"interestRate\":").append(interestRate);
-        sb.append(",\"purchasePrice\":").append(purchasePrice);
+        sb.append(",\"parValue\":").append(parValue);
         sb.append(",\"maturityDate\":").append(maturityDate);
         sb.append(",\"creditRating\":").append("\"").append(creditRating).append("\"");
         sb.append(",\"totalUnits\":").append(totalUnits);

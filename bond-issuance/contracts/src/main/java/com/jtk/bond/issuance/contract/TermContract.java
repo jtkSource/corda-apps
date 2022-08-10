@@ -44,9 +44,11 @@ public class TermContract extends EvolvableTokenContract implements Contract {
         requireThat(req->{
             req.using("BondTerm Issuer cannot be empty", (createdTerm.getIssuer()!=null));
             req.using("BondTerm State cannot be empty", (!createdTerm.getBondStatus().isEmpty()));
-            req.using("BondTerm Coupon payment left cannot be less than zero", (createdTerm.getCouponPaymentLeft()>=0));
+            req.using("BondTerm Payments Per Year cannot be greater than 12", (createdTerm.getPaymentsPerYear() <= 12));
+            req.using("BondTerm Payments Per Year cannot be less than 1", (createdTerm.getPaymentsPerYear() > 0));
             req.using("BondTerm Interest rate payment cannot be less than 0",(createdTerm.getInterestRate() >= 0.0));
-            req.using("BondTerm Interest purchase price cannot be less than 0",(createdTerm.getPurchasePrice() >= 0.0));
+            req.using("BondTerm Interest par value cannot be less than 100 and more than 1000",
+                    (createdTerm.getParValue() >= 100 && createdTerm.getParValue() <= 1000));
             req.using("BondTerm maturity date cannot be null", (createdTerm.getMaturityDate()!=null));
             LocalDate date = null;
             try {
@@ -77,6 +79,7 @@ public class TermContract extends EvolvableTokenContract implements Contract {
             //Validations when a bond Term is updated
             req.using("BondTerm Issuer cannot be changed", inputTermState.getIssuer().equals(outputTermState.getIssuer()));
             req.using("BondTerm Currency must not be changed.", inputTermState.getCurrency().equals(outputTermState.getCurrency()));
+            req.using("BondTerm Par Value must not be changed.", inputTermState.getParValue() == outputTermState.getParValue());
             req.using("BondTerm Name must not be changed.", inputTermState.getBondName().equals(outputTermState.getBondName()));
             req.using("BondTerm FractionDigits must not be changed.", inputTermState.getFractionDigits() == outputTermState.getFractionDigits());
             req.using("BondTerm available units shouldn't be less than 0 and greater than totalUnits",

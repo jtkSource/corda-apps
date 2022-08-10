@@ -100,7 +100,7 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
         TermState newTermState = new TermState(
                 investorTermState.getIssuer(), investors,investorTermState.getBondName(),
                 investorTermState.getBondStatus(),investorTermState.getCouponPaymentLeft(),
-                investorTermState.getInterestRate(),investorTermState.getPurchasePrice(),
+                investorTermState.getInterestRate(),investorTermState.getParValue(),
                 newAvailableUnits, (investorTermState.getRedemptionAvailable() + brn.units),
                 investorTermState.getLinearId(),investorTermState.getMaturityDate(),
                 investorTermState.getBondType(),investorTermState.getCurrency(),
@@ -119,7 +119,7 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
 
         /** Issue a bond **/
         final BondState bondState = new BondState(
-                getOurIdentity(),brn.investor,newTermState.getInterestRate(),newTermState.getPurchasePrice(),
+                getOurIdentity(),brn.investor,newTermState.getInterestRate(),newTermState.getParValue(),
                 newTermState.getMaturityDate(), newTermState.getCreditRating(), newTermState.getCouponPaymentLeft(),
                 newTermState.getBondStatus(), newTermState.getBondType(), newTermState.getCurrency(), newTermState.getBondName(),
                 newTermState.getLinearId(),new UniqueIdentifier(), newTermState.getPaymentsPerYear());

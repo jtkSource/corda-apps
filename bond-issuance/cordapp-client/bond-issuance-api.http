@@ -23,19 +23,20 @@ GET http://{{host}}:{{port}}/corda/me
 GET http://{{host}}:{{port}}/corda/states
 
 ###
-POST http://{{host}}:{{port}}/corda/terms
+POST http://{{host}}:{{port}}/corda/terms/issue
 Content-Type: application/json
 
 {
-  "bondName": "GS-20Y-TB-USD",
-  "couponPaymentLeft": 80,
+  "bondName": "GS-5Y-TB-USD",
+  "couponPaymentLeft": 15,
   "interestRate": 4.5,
   "purchasePrice": 500,
-  "unitsAvailable": 25400,
-  "maturityDate": "20420808",
+  "unitsAvailable": 200,
+  "maturityDate": "20270810",
   "bondType": "CB",
   "currency": "USD",
-  "creditRating": "B-"
+  "creditRating": "B-",
+  "paymentsPerYear": 3
 }
 
 
