@@ -41,17 +41,16 @@ public class CreateAndIssueTermFlow extends FlowLogic<String> {
     private final int unitsAvailable; // number of units available - reduces with every bond that is brought
     private final String maturityDate;
     private final String bondType;
-
     private final String creditRating;
-
     private final String currency;
     private static final Logger log = LoggerFactory.getLogger(CreateAndIssueTermFlow.class);
+    private final int paymentsPerYear;
 
 
     public CreateAndIssueTermFlow(String bondName, int couponPaymentLeft,
                                   double interestRate, double purchasePrice, int unitsAvailable,
                                   String maturityDate, String bondType, String currency,
-                                  String creditRating)
+                                  String creditRating, int paymentsPerYear)
     {
         this.bondName = bondName;
         this.couponPaymentLeft = couponPaymentLeft;
@@ -62,6 +61,7 @@ public class CreateAndIssueTermFlow extends FlowLogic<String> {
         this.bondType = bondType;
         this.currency = currency;
         this.creditRating = creditRating;
+        this.paymentsPerYear = paymentsPerYear;
     }
 
     @Override
@@ -89,7 +89,8 @@ public class CreateAndIssueTermFlow extends FlowLogic<String> {
                 company, new HashSet<>(), bondName, BondStatus.ACTIVE.name(),
                 couponPaymentLeft, interestRate, purchasePrice,
                 unitsAvailable, 0,new UniqueIdentifier(),
-                this.maturityDate, this.bondType, this.currency, this.creditRating);
+                this.maturityDate, this.bondType, this.currency,
+                this.creditRating,this.paymentsPerYear);
 
         log.info("Created TermState {}", termState);
 

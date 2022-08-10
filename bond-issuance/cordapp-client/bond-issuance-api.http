@@ -1,0 +1,80 @@
+###
+GET http://{{host}}:{{port}}/corda/addresses
+
+###
+GET http://{{host}}:{{port}}/corda/identities
+
+###
+GET http://{{host}}:{{port}}/corda/platformversion
+
+###
+GET http://{{host}}:{{port}}/corda/peers
+
+###
+GET http://{{host}}:{{port}}/corda/notaries
+
+###
+GET http://{{host}}:{{port}}/corda/flows
+
+###
+GET http://{{host}}:{{port}}/corda/me
+
+###
+GET http://{{host}}:{{port}}/corda/states
+
+###
+POST http://{{host}}:{{port}}/corda/terms
+Content-Type: application/json
+
+{
+  "bondName": "GS-20Y-TB-USD",
+  "couponPaymentLeft": 80,
+  "interestRate": 4.5,
+  "purchasePrice": 500,
+  "unitsAvailable": 25400,
+  "maturityDate": "20420808",
+  "bondType": "CB",
+  "currency": "USD",
+  "creditRating": "B-"
+}
+
+
+###
+POST http://{{host}}:{{port}}/corda/terms/query
+Content-Type: application/json
+
+{
+  "queryType": "greaterThanMaturityDate",
+  "queryValue": "20220812"
+}
+
+###
+POST http://{{host}}:{{port}}/corda/bonds/issue
+Content-Type: application/json
+
+{
+  "teamStateLinearID": "4d6274cf-0908-4653-8d0f-04e13b7cba83",
+  "unitsOfBonds": 20
+}
+
+###
+POST http://{{host}}:{{port}}/corda/bonds/query
+Content-Type: application/json
+
+{
+  "queryType": "greaterThanMaturityDate",
+  "queryValue": "20220812"
+}
+
+###
+POST http://{{host}}:{{port}}/corda/bonds/query
+Content-Type: application/json
+
+{
+  "queryType": "byTermStateLinearID",
+  "queryValue": "4d6274cf-0908-4653-8d0f-04e13b7cba83"
+}
+
+###
+GET http://{{host}}:{{port}}/corda/bonds/tokens/4d6274cf-0908-4653-8d0f-04e13b7cba83
+Content-Type: application/json

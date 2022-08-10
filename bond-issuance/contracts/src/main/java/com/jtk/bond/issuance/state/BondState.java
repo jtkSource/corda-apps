@@ -33,13 +33,15 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
 
     private final String bondName;
 
+    private final int paymentsPerYear;
+
     private final UniqueIdentifier termStateLinearID;
     private final UniqueIdentifier linearId;
 
     public BondState(Party issuer, Party investor, double interestRate, double purchasePrice, String maturityDate,
                      String creditRating, double couponPaymentLeft,String bondStatus,String bondType,String currency,
                      String bondName, UniqueIdentifier termStateLinearID,
-                     UniqueIdentifier linearId) {
+                     UniqueIdentifier linearId, int paymentsPerYear) {
         this.issuer = issuer;
         this.investor = investor;
         this.interestRate = interestRate;
@@ -52,6 +54,7 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
         this.bondName = bondName;
         this.couponPaymentLeft = couponPaymentLeft;
         this.termStateLinearID = termStateLinearID;
+        this.paymentsPerYear = paymentsPerYear;
         this.linearId = linearId;
     }
 
@@ -114,6 +117,10 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
         return bondName;
     }
 
+    public int getPaymentsPerYear() {
+        return paymentsPerYear;
+    }
+
     public UniqueIdentifier getTermStateLinearID() {
         return termStateLinearID;
     }
@@ -134,6 +141,7 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
         if (!currency.equals(bondState.currency)) return false;
         if (!bondName.equals(bondState.bondName)) return false;
         if (!investor.equals(bondState.investor)) return false;
+        if (!(paymentsPerYear == bondState.paymentsPerYear)) return false;
         if (!termStateLinearID.equals(bondState.termStateLinearID)) return false;
         return linearId.equals(bondState.linearId);
     }
@@ -145,6 +153,7 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
         result = 31 * result + currency.hashCode();
         result = 31 * result + bondName.hashCode();
         result = 31 * result + termStateLinearID.hashCode();
+        result = 31 * result + paymentsPerYear;
         result = 31 * result + linearId.hashCode();
         return result;
     }
@@ -179,6 +188,7 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
         sb.append(",\"maturityDate\":").append("\"").append(maturityDate).append("\"");
         sb.append(",\"creditRating\":").append("\"").append(creditRating).append("\"");
         sb.append(",\"couponPaymentLeft\":").append(couponPaymentLeft);
+        sb.append(",\"paymentsPerYear\":").append(paymentsPerYear);
         sb.append(",\"bondType\":").append("\"").append(bondType).append("\"");
         sb.append(",\"currency\":").append("\"").append(currency).append("\"");
         sb.append(",\"bondStatus\":").append("\"").append(bondStatus).append("\"");

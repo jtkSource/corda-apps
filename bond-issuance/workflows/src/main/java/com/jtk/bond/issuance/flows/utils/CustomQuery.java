@@ -45,7 +45,7 @@ public class CustomQuery {
                 .filter(ts-> {
                     LocalDate termMaturityDate = LocalDate.parse(ts.getMaturityDate(), locateDateformat);
                     LocalDate queryMaturityDate = LocalDate.parse(maturityDate, locateDateformat);
-                    return termMaturityDate.isBefore(queryMaturityDate);
+                    return termMaturityDate.isBefore(queryMaturityDate) || termMaturityDate.isEqual(queryMaturityDate);
                 })
                 .collect(Collectors.toList());
     }
@@ -58,7 +58,7 @@ public class CustomQuery {
                 .filter(ts-> {
                     LocalDate termMaturityDate = LocalDate.parse(ts.getMaturityDate(), locateDateformat);
                     LocalDate queryMaturityDate = LocalDate.parse(maturityDate, locateDateformat);
-                    return termMaturityDate.isAfter(queryMaturityDate);
+                    return termMaturityDate.isAfter(queryMaturityDate) || termMaturityDate.isEqual(queryMaturityDate);
                 })
                 .collect(Collectors.toList());
     }
@@ -72,7 +72,7 @@ public class CustomQuery {
                 .orElseThrow(()-> new IllegalArgumentException("TeamStateLinearID ="+teamStateLinearID.toString()+ " not found from vault"));
     }
 
-    public static List<BondState> queryBondByTeamStateLinearID(UniqueIdentifier uniqueIdentifier, ServiceHub serviceHub) {
+    public static List<BondState> queryBondByTermStateLinearID(UniqueIdentifier uniqueIdentifier, ServiceHub serviceHub) {
         List<StateAndRef<BondState>> statesAndRef = serviceHub.getVaultService().queryBy(BondState.class).getStates();
         return statesAndRef.stream()
                 .map(sr->sr.getState().getData().toPointer(BondState.class))

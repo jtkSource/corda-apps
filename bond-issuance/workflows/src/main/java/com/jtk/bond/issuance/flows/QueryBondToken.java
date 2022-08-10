@@ -55,7 +55,7 @@ public class QueryBondToken {
         @Override
         @Suspendable
         public Long call() throws FlowException {
-            List<BondState> bondList = CustomQuery.queryBondByTeamStateLinearID
+            List<BondState> bondList = CustomQuery.queryBondByTermStateLinearID
                     (UniqueIdentifier.Companion.fromString(termLinearID), getServiceHub());
 
             return bondList.stream()

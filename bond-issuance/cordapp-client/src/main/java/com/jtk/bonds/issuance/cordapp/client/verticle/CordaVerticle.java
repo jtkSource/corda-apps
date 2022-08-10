@@ -59,19 +59,23 @@ public class CordaVerticle extends AbstractVerticle {
             {
                         switch (url) {
                             case "addresses":
-                                responseJson.put("msg", nodeRPC.proxy().nodeInfo().getAddresses().toString());
+                                String address = nodeRPC.proxy().nodeInfo().getAddresses().toString();
+                                responseJson.put("msg", String.format("{ \"msg\":\"%s\"}", address));
                                 break;
                             case "identities":
-                                responseJson.put("msg", nodeRPC.proxy().nodeInfo().getLegalIdentities().toString());
+                                String identities = nodeRPC.proxy().nodeInfo().getLegalIdentities().toString();
+                                responseJson.put("msg", String.format("{ \"msg\":\"%s\"}", identities));
                                 break;
                             case "platformversion":
-                                responseJson.put("msg", nodeRPC.proxy().nodeInfo().getPlatformVersion());
+                                int platformVersion = nodeRPC.proxy().nodeInfo().getPlatformVersion();
+                                responseJson.put("msg", String.format("{ \"msg\":\"%s\"}", platformVersion));
                                 break;
                             case "peers":
                                 responseJson.put("msg", getPeers());
                                 break;
                             case "notaries":
-                                responseJson.put("msg", nodeRPC.proxy().notaryIdentities().toString());
+                                String notary = nodeRPC.proxy().notaryIdentities().toString();
+                                responseJson.put("msg", String.format("{ \"msg\":\"%s\"}", notary));
                                 break;
                             case "flows":
                                 responseJson.put("msg", nodeRPC.proxy().registeredFlows().toString());

@@ -87,7 +87,7 @@ public class FlowTests {
          * Create Terms for testing
          */
         CordaFuture<String> future = gsNode.startFlow(new CreateAndIssueTermFlow("RFB-GS-TEST1",4, 3.2,1200,
-                1000,"20270806", "CB", "USD", "AAA"));
+                1000,"20270806", "CB", "USD", "AAA",2));
         network.runNetwork();
         String response = future.get();
         log.info("Response to term creation: {}",response);
@@ -112,7 +112,7 @@ public class FlowTests {
     @Test
     public void testCreateAndIssueTermShouldNotifyBankAndObserversOfNewTerm() throws ExecutionException, InterruptedException {
         CordaFuture<String> future = gsNode.startFlow(new CreateAndIssueTermFlow("RFB-GS-TEST2",8, 5,100,
-                1600,"20240806", "CB", "SGD", "BB"));
+                1600,"20240806", "CB", "SGD", "BB",2));
         network.runNetwork();
         String response = future.get().split(">")[1];
         JSONObject json = (JSONObject) new JSONTokener(response).nextValue();

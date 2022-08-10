@@ -29,7 +29,11 @@ import net.corda.core.transactions.SignedTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -99,7 +103,8 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
                 investorTermState.getInterestRate(),investorTermState.getPurchasePrice(),
                 newAvailableUnits, (investorTermState.getRedemptionAvailable() + brn.units),
                 investorTermState.getLinearId(),investorTermState.getMaturityDate(),
-                investorTermState.getBondType(),investorTermState.getCurrency(),investorTermState.getCreditRating());
+                investorTermState.getBondType(),investorTermState.getCurrency(),
+                investorTermState.getCreditRating(), investorTermState.getPaymentsPerYear());
 
         List<Party> termObservers = new ArrayList<>();
         termObservers.addAll(allBanks);
@@ -117,13 +122,12 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
                 getOurIdentity(),brn.investor,newTermState.getInterestRate(),newTermState.getPurchasePrice(),
                 newTermState.getMaturityDate(), newTermState.getCreditRating(), newTermState.getCouponPaymentLeft(),
                 newTermState.getBondStatus(), newTermState.getBondType(), newTermState.getCurrency(), newTermState.getBondName(),
-                newTermState.getLinearId(),new UniqueIdentifier());
+                newTermState.getLinearId(),new UniqueIdentifier(), newTermState.getPaymentsPerYear());
 
         TransactionState<BondState> transactionState = new TransactionState<>(bondState, notary);
         List<Party> bondObservers = new ArrayList<>();
         bondObservers.addAll(observers);
         bondObservers.add(getOurIdentity());
-        //bondObservers.add(brn.investor);
         subFlow(new CreateEvolvableTokens(transactionState, bondObservers));
 
         log.info("Published evolvable tokens for Bond {} ", bondState.getBondName());

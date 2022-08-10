@@ -41,12 +41,15 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
                                       //  value = totalUnits...0
     private final int redemptionAvailable; // number of units that have to be redeemed - increased with every bond brought
                                            //  value = 0...totalUnits
+
+    private final int paymentsPerYear;
     private final String bondType;
     private final UniqueIdentifier linearId; // identifier of the bond
     public TermState(Party issuer, Set<Party> investors, String bondName, String bondStatus,
                      int couponPaymentLeft, double interestRate, double purchasePrice,
                      int unitsAvailable, int redemptionAvailable, UniqueIdentifier linearId,
-                     String maturityDate, String bondType, String currency, String creditRating) {
+                     String maturityDate, String bondType, String currency, String creditRating,
+                     int paymentsPerYear) {
         this.issuer = issuer;
         this.investors = investors;
         this.bondStatus = bondStatus;
@@ -54,6 +57,7 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         this.bondName = bondName;
         this.currency = currency;
         this.couponPaymentLeft = couponPaymentLeft;
+        this.paymentsPerYear = paymentsPerYear;
         this.interestRate = interestRate;
         this.purchasePrice = purchasePrice;
         this.maturityDate = maturityDate;
@@ -137,6 +141,10 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         return totalUnits;
     }
 
+    public int getPaymentsPerYear() {
+        return paymentsPerYear;
+    }
+
     /* This method returns a TokenPointer by using the linear Id of the evolvable state */
     public TokenPointer<TermState> toPointer(){
         return new TokenPointer<>(new LinearPointer<>(linearId, TermState.class), fractionDigits);
@@ -152,6 +160,7 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
 
         if (!issuer.equals(termState.issuer)) return false;
         if (!bondName.equals(termState.bondName)) return false;
+        if (!(paymentsPerYear == termState.paymentsPerYear)) return false;
         return linearId.equals(termState.linearId);
     }
 
@@ -160,6 +169,7 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         int result = issuer.hashCode();
         result = 31 * result + bondName.hashCode();
         result = 31 * result + linearId.hashCode();
+        result = 31 * result + paymentsPerYear;
         return result;
     }
 
@@ -176,6 +186,7 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         sb.append(", maturityDate='").append(maturityDate).append('\'');
         sb.append(", creditRating='").append(creditRating).append('\'');
         sb.append(", totalUnits=").append(totalUnits);
+        sb.append(", paymentsPerYear='").append(paymentsPerYear);
         sb.append(", unitsAvailable=").append(unitsAvailable);
         sb.append(", redemptionAvailable=").append(redemptionAvailable);
         sb.append(", bondType='").append(bondType).append('\'');
@@ -205,6 +216,7 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         sb.append(",\"maturityDate\":").append(maturityDate);
         sb.append(",\"creditRating\":").append("\"").append(creditRating).append("\"");
         sb.append(",\"totalUnits\":").append(totalUnits);
+        sb.append(",\"paymentsPerYear\":").append(paymentsPerYear);
         sb.append(",\"unitsAvailable\":").append(unitsAvailable);
         sb.append(",\"redemptionAvailable\":").append(redemptionAvailable);
         sb.append(",\"bondType\":").append("\"").append(bondType).append("\"");

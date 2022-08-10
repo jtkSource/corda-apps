@@ -29,7 +29,7 @@ public class QueryBondsFlow {
         @Override
         @Suspendable
         public String call() {
-            return CustomQuery.queryBondByTeamStateLinearID(teamStateLinearID, getServiceHub())
+            return CustomQuery.queryBondByTermStateLinearID(teamStateLinearID, getServiceHub())
                     .stream()
                     .map(BondState::toJson)
                     .collect(Collectors.toList())
