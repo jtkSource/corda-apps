@@ -227,6 +227,8 @@ components:
           type: string
         creditRating:
           type: string
+        paymentsPerYear:
+          type: number
     termCreateResponse:
       type: object
       properties:

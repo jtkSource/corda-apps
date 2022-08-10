@@ -97,7 +97,8 @@ public class CordaVerticle extends AbstractVerticle {
                                             json.getString("maturityDate"),
                                             json.getString("bondType"),
                                             json.getString("currency"),
-                                            json.getString("creditRating")).getReturnValue().get();
+                                            json.getString("creditRating"),
+                                            json.getInteger("paymentsPerYear")).getReturnValue().get();
                                     String response = returnMsg.split(">")[1];
                                     responseJson.put("msg", response);
                                 } catch (InterruptedException e) {
