@@ -134,8 +134,9 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
         final BondState bondState = new BondState(
                 getOurIdentity(),brn.investor,newTermState.getInterestRate(),newTermState.getParValue(),
                 newTermState.getMaturityDate(), newTermState.getCreditRating(), numberOfPayments,
-                newTermState.getBondStatus(), newTermState.getBondType(), newTermState.getCurrency(), newTermState.getBondName(),
-                newTermState.getLinearId(),new UniqueIdentifier(), newTermState.getPaymentFrequencyInMonths(), issueDate, nCouponDate);
+                newTermState.getBondStatus(), newTermState.getBondType(), newTermState.getCurrency(),
+                newTermState.getBondName(), newTermState.getLinearId(),new UniqueIdentifier(),
+                newTermState.getPaymentFrequencyInMonths(), issueDate, nCouponDate);
 
         TransactionState<BondState> transactionState = new TransactionState<>(bondState, notary);
         List<Party> bondObservers = new ArrayList<>();

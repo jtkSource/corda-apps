@@ -90,15 +90,14 @@ public class CordaVerticle extends AbstractVerticle {
                                 try {
                                     String returnMsg = nodeRPC.proxy().startTrackedFlowDynamic(CreateAndIssueTermFlow.class,
                                             json.getString("bondName"),
-                                            json.getInteger("couponPaymentLeft"),
                                             json.getDouble("interestRate"),
-                                            json.getDouble("purchasePrice"),
+                                            json.getInteger("parValue"),
                                             json.getInteger("unitsAvailable"),
                                             json.getString("maturityDate"),
                                             json.getString("bondType"),
                                             json.getString("currency"),
                                             json.getString("creditRating"),
-                                            json.getInteger("paymentsPerYear")).getReturnValue().get();
+                                            json.getInteger("paymentFrequencyInMonths")).getReturnValue().get();
                                     String response = returnMsg.split(">")[1];
                                     responseJson.put("msg", response);
                                 } catch (InterruptedException e) {

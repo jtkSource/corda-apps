@@ -211,14 +211,12 @@ components:
       properties:
         bondName:
           type: string
-        couponPaymentLeft:
-          type: number
         interestRate:
           type: number
-        purchasePrice:
+        parValue:
           type: number
         unitsAvailable:
-          type: number
+          type: integer
         maturityDate:
           type: string
         bondType:
@@ -227,8 +225,8 @@ components:
           type: string
         creditRating:
           type: string
-        paymentsPerYear:
-          type: number
+        paymentFrequencyInMonths:
+          type: integer
     termCreateResponse:
       type: object
       properties:
@@ -236,7 +234,7 @@ components:
           type: string
         bondName:
           type: string
-        purchasePrice:
+        parValue:
           type: string
         linearId:
           type: string

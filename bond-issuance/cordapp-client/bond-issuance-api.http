@@ -27,16 +27,15 @@ POST http://{{host}}:{{port}}/corda/terms/issue
 Content-Type: application/json
 
 {
-  "bondName": "GS-5Y-TB-USD",
-  "couponPaymentLeft": 15,
-  "interestRate": 4.5,
-  "purchasePrice": 500,
-  "unitsAvailable": 200,
-  "maturityDate": "20270810",
-  "bondType": "CB",
+  "bondName": "GS-30Y-TB-USD",
+  "interestRate": 12.0,
+  "parValue": 1000,
+  "unitsAvailable": 500,
+  "maturityDate": "20320810",
+  "bondType": "TB",
   "currency": "USD",
-  "creditRating": "B-",
-  "paymentsPerYear": 3
+  "creditRating": "AAA",
+  "paymentFrequencyInMonths": 6
 }
 
 
@@ -54,8 +53,8 @@ POST http://{{host}}:{{port}}/corda/bonds/issue
 Content-Type: application/json
 
 {
-  "teamStateLinearID": "4d6274cf-0908-4653-8d0f-04e13b7cba83",
-  "unitsOfBonds": 20
+  "teamStateLinearID": "a7ffd03a-4ba6-496a-8130-fbea8f779c0e",
+  "unitsOfBonds": 10
 }
 
 ###
@@ -73,9 +72,9 @@ Content-Type: application/json
 
 {
   "queryType": "byTermStateLinearID",
-  "queryValue": "4d6274cf-0908-4653-8d0f-04e13b7cba83"
+  "queryValue": "a7ffd03a-4ba6-496a-8130-fbea8f779c0e"
 }
 
 ###
-GET http://{{host}}:{{port}}/corda/bonds/tokens/4d6274cf-0908-4653-8d0f-04e13b7cba83
+GET http://{{host}}:{{port}}/corda/bonds/tokens/a7ffd03a-4ba6-496a-8130-fbea8f779c0e
 Content-Type: application/json
