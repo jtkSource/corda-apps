@@ -86,7 +86,7 @@ public class FlowTests {
         /**
          * Create Terms for testing
          */
-        CordaFuture<String> future = gsNode.startFlow(new CreateAndIssueTermFlow("RFB-GS-TEST1",4, 3.2,1200,
+        CordaFuture<String> future = gsNode.startFlow(new CreateAndIssueTermFlow("RFB-GS-TEST1",4, 3.2,1000,
                 1000,"20270806", "CB", "USD", "AAA",2));
         network.runNetwork();
         String response = future.get();
