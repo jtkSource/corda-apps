@@ -23,25 +23,22 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
     private final double interestRate;
     private final int parValue;
     private final String maturityDate;
+    private final String issueDate;
+    private final String nextCouponDate;
     private final String creditRating;
     private final double couponPaymentLeft;
     private final String bondType;
-
     private final String currency;
-
     private final String bondStatus; // state of the bond
-
     private final String bondName;
-
-    private final int paymentsPerYear;
-
+    private final int paymentFrequencyInMonths;
     private final UniqueIdentifier termStateLinearID;
     private final UniqueIdentifier linearId;
 
     public BondState(Party issuer, Party investor, double interestRate, int parValue, String maturityDate,
                      String creditRating, double couponPaymentLeft, String bondStatus, String bondType, String currency,
                      String bondName, UniqueIdentifier termStateLinearID,
-                     UniqueIdentifier linearId, int paymentsPerYear) {
+                     UniqueIdentifier linearId, int paymentFrequencyInMonths, String issueDate, String nextCouponDate) {
         this.issuer = issuer;
         this.investor = investor;
         this.interestRate = interestRate;
@@ -54,8 +51,10 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
         this.bondName = bondName;
         this.couponPaymentLeft = couponPaymentLeft;
         this.termStateLinearID = termStateLinearID;
-        this.paymentsPerYear = paymentsPerYear;
+        this.paymentFrequencyInMonths = paymentFrequencyInMonths;
         this.linearId = linearId;
+        this.issueDate = issueDate;
+        this.nextCouponDate = nextCouponDate;
     }
 
     @Override
@@ -117,12 +116,20 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
         return bondName;
     }
 
-    public int getPaymentsPerYear() {
-        return paymentsPerYear;
+    public int getPaymentFrequencyInMonths() {
+        return paymentFrequencyInMonths;
     }
 
     public UniqueIdentifier getTermStateLinearID() {
         return termStateLinearID;
+    }
+
+    public String getIssueDate() {
+        return issueDate;
+    }
+
+    public String getNextCouponDate() {
+        return nextCouponDate;
     }
 
     public TokenPointer<BondState> toPointer(){
@@ -141,7 +148,7 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
         if (!currency.equals(bondState.currency)) return false;
         if (!bondName.equals(bondState.bondName)) return false;
         if (!investor.equals(bondState.investor)) return false;
-        if (!(paymentsPerYear == bondState.paymentsPerYear)) return false;
+        if (!(paymentFrequencyInMonths == bondState.paymentFrequencyInMonths)) return false;
         if (!termStateLinearID.equals(bondState.termStateLinearID)) return false;
         return linearId.equals(bondState.linearId);
     }
@@ -153,7 +160,7 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
         result = 31 * result + currency.hashCode();
         result = 31 * result + bondName.hashCode();
         result = 31 * result + termStateLinearID.hashCode();
-        result = 31 * result + paymentsPerYear;
+        result = 31 * result + paymentFrequencyInMonths;
         result = 31 * result + linearId.hashCode();
         return result;
     }
@@ -168,6 +175,7 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
         sb.append(", maturityDate='").append(maturityDate).append('\'');
         sb.append(", creditRating='").append(creditRating).append('\'');
         sb.append(", couponPaymentLeft=").append(couponPaymentLeft);
+        sb.append(", paymentFrequencyInMonths=").append(paymentFrequencyInMonths);
         sb.append(", bondType='").append(bondType).append('\'');
         sb.append(", currency='").append(currency).append('\'');
         sb.append(", bondStatus='").append(bondStatus).append('\'');
@@ -179,16 +187,17 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
     }
 
     public String toJson(){
-        //":
         final StringBuilder sb = new StringBuilder("{");
         sb.append("\"issuer\":").append("\"").append(issuer).append("\"");
         sb.append(",\"investor\":").append("\"").append(investor).append("\"");
         sb.append(",\"interestRate\":").append(interestRate);
         sb.append(",\"parValue\":").append(parValue);
         sb.append(",\"maturityDate\":").append("\"").append(maturityDate).append("\"");
+        sb.append(",\"issueDate\":").append("\"").append(issueDate).append("\"");
+        sb.append(",\"nextCouponDate\":").append("\"").append(nextCouponDate).append("\"");
         sb.append(",\"creditRating\":").append("\"").append(creditRating).append("\"");
         sb.append(",\"couponPaymentLeft\":").append(couponPaymentLeft);
-        sb.append(",\"paymentsPerYear\":").append(paymentsPerYear);
+        sb.append(",\"paymentFrequencyInMonths\":").append(paymentFrequencyInMonths);
         sb.append(",\"bondType\":").append("\"").append(bondType).append("\"");
         sb.append(",\"currency\":").append("\"").append(currency).append("\"");
         sb.append(",\"bondStatus\":").append("\"").append(bondStatus).append("\"");

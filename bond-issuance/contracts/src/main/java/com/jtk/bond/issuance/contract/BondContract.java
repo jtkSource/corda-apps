@@ -40,24 +40,30 @@ public class BondContract extends EvolvableTokenContract implements Contract {
         BondState bondState = tx.outputsOfType(BondState.class).get(0);
         // bond state should be associated with a term state
 
-        requireThat(req->{
+        requireThat(req-> {
            req.using("BondState requires a TermState ", bondState.getTermStateLinearID()!=null);
            req.using("BondState requires an Investor from a Bank",
                    bondState.getInvestor().getName().getOrganisationUnit().equals("Bank"));
             req.using("BondState Status cannot be empty", (!bondState.getBondStatus().isEmpty()));
             req.using("BondState Coupon payment left cannot be less than zero", (bondState.getCouponPaymentLeft()>=0));
             req.using("BondState Interest rate payment cannot be less than 0",(bondState.getInterestRate() >= 0.0));
-            req.using("BondState Interest parValue cannot be less than 100 and greater than 1000",
+           req.using("BondState parValue cannot be less than 100 and greater than 1000",
                     (bondState.getParValue() >= 100 && bondState.getParValue() <= 1000));
-            req.using("BondState maturity date cannot be null", (bondState.getMaturityDate()!=null));
-            LocalDate date = null;
+
+            LocalDate maturityDate = null;
+            LocalDate issueDate = null;
             try {
-                date = LocalDate.parse(bondState.getMaturityDate(), locateDateformat);
+                maturityDate = LocalDate.parse(bondState.getMaturityDate(), locateDateformat);
+                issueDate = LocalDate.parse(bondState.getIssueDate(), locateDateformat);
             }catch (Exception e){
-                req.using("Maturity date format should be yyyyMMdd", false);
+                req.using("Maturity date and Issue Date format should be yyyyMMdd", false);
             }
             req.using("BondState maturity date must be greater than a 30 days",
-                    (date.isAfter(LocalDate.now().plusDays(30))));
+                    (maturityDate.isAfter(LocalDate.now().plusDays(30))));
+            req.using("BondState maturity date must be greater than issue date",
+                    (maturityDate.isAfter(issueDate)));
+
+            req.using("BondTerm payment frequency must be grater than zero", (bondState.getPaymentFrequencyInMonths()>0));
             req.using("BondState Credit rating cannot be empty or NA ",
                     (bondState.getCreditRating() != null) &&
                             BondCreditRating.lookupRating(bondState.getCreditRating()).orElse(BondCreditRating.NA) != BondCreditRating.NA);
@@ -75,10 +81,16 @@ public class BondContract extends EvolvableTokenContract implements Contract {
         BondState outputBondState = tx.outputsOfType(BondState.class).get(0);
         requireThat(req-> {
             //Validations when a bond Term is updated
-            req.using("BondTerm Issuer cannot be changed", inputBondState.getIssuer().equals(outputBondState.getIssuer()));
-            req.using("BondTerm Currency must not be changed.", inputBondState.getCurrency().equals(outputBondState.getCurrency()));
-            req.using("BondTerm Name must not be changed.", inputBondState.getBondName().equals(outputBondState.getBondName()));
-            req.using("BondTerm FractionDigits must not be changed.", inputBondState.getFractionDigits() == outputBondState.getFractionDigits());
+            req.using("Bond Issuer cannot be changed", (inputBondState.getIssuer().equals(outputBondState.getIssuer())));
+            req.using("Bond Currency must not be changed.", (inputBondState.getCurrency().equals(outputBondState.getCurrency())));
+            req.using("Bond payment frequency must not be changed.",
+                    (inputBondState.getPaymentFrequencyInMonths() == outputBondState.getPaymentFrequencyInMonths()));
+            req.using("Bond maturity date must not be changed.",
+                    (inputBondState.getMaturityDate() == outputBondState.getMaturityDate()));
+            req.using("Bond issue date must not be changed.",
+                    (inputBondState.getIssueDate() == outputBondState.getIssueDate()));
+            req.using("Bond Name must not be changed.", (inputBondState.getBondName().equals(outputBondState.getBondName())));
+            req.using("Bond FractionDigits must not be changed.", (inputBondState.getFractionDigits() == outputBondState.getFractionDigits()));
             return null;
         });
 

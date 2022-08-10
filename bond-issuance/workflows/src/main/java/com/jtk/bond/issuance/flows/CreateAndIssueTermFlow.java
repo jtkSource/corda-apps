@@ -35,7 +35,6 @@ import java.util.stream.Collectors;
 @StartableByRPC
 public class CreateAndIssueTermFlow extends FlowLogic<String> {
     private final String bondName; // Name of bond cannot be changed
-    private final int couponPaymentLeft; // number of coupon payments left
     private final double interestRate; // current interest rate for the bonds
     private final int parValue; // current price of the bond
     private final int unitsAvailable; // number of units available - reduces with every bond that is brought
@@ -44,16 +43,14 @@ public class CreateAndIssueTermFlow extends FlowLogic<String> {
     private final String creditRating;
     private final String currency;
     private static final Logger log = LoggerFactory.getLogger(CreateAndIssueTermFlow.class);
-    private final int paymentsPerYear;
+    private final int paymentFrequencyInMonths;
 
 
-    public CreateAndIssueTermFlow(String bondName, int couponPaymentLeft,
-                                  double interestRate, int parValue, int unitsAvailable,
+    public CreateAndIssueTermFlow(String bondName, double interestRate, int parValue, int unitsAvailable,
                                   String maturityDate, String bondType, String currency,
-                                  String creditRating, int paymentsPerYear)
+                                  String creditRating, int paymentFrequencyInMonths)
     {
         this.bondName = bondName;
-        this.couponPaymentLeft = couponPaymentLeft;
         this.interestRate = interestRate;
         this.parValue = parValue;
         this.unitsAvailable = unitsAvailable;
@@ -61,7 +58,7 @@ public class CreateAndIssueTermFlow extends FlowLogic<String> {
         this.bondType = bondType;
         this.currency = currency;
         this.creditRating = creditRating;
-        this.paymentsPerYear = paymentsPerYear;
+        this.paymentFrequencyInMonths = paymentFrequencyInMonths;
     }
 
     @Override
@@ -87,10 +84,10 @@ public class CreateAndIssueTermFlow extends FlowLogic<String> {
 
         final TermState termState = new TermState(
                 company, new HashSet<>(), bondName, BondStatus.ACTIVE.name(),
-                couponPaymentLeft, interestRate, parValue,
+                interestRate, parValue,
                 unitsAvailable, 0,new UniqueIdentifier(),
                 this.maturityDate, this.bondType, this.currency,
-                this.creditRating,this.paymentsPerYear);
+                this.creditRating,this.paymentFrequencyInMonths);
 
         log.info("Created TermState {}", termState);
 
