@@ -31,7 +31,6 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
     private final String bondStatus; // state of the bond
     private final String bondName; // Name of bond cannot be changed
     private final String currency;
-    private final int couponPaymentLeft; // number of coupon payments left
     private final double interestRate; // current interest rate for the bonds
     private final int parValue; // current price of the bond - faceValue
     private final String maturityDate; // Maturity date of the bond
@@ -42,22 +41,21 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
     private final int redemptionAvailable; // number of units that have to be redeemed - increased with every bond brought
                                            //  value = 0...totalUnits
 
-    private final int paymentsPerYear;
+    private final int paymentFrequencyInMonths;
     private final String bondType;
     private final UniqueIdentifier linearId; // identifier of the bond
     public TermState(Party issuer, Set<Party> investors, String bondName, String bondStatus,
-                     int couponPaymentLeft, double interestRate, int parValue,
+                     double interestRate, int parValue,
                      int unitsAvailable, int redemptionAvailable, UniqueIdentifier linearId,
                      String maturityDate, String bondType, String currency, String creditRating,
-                     int paymentsPerYear) {
+                     int paymentFrequencyInMonths) {
         this.issuer = issuer;
         this.investors = investors;
         this.bondStatus = bondStatus;
         this.bondType = bondType;
         this.bondName = bondName;
         this.currency = currency;
-        this.couponPaymentLeft = couponPaymentLeft;
-        this.paymentsPerYear = paymentsPerYear;
+        this.paymentFrequencyInMonths = paymentFrequencyInMonths;
         this.interestRate = interestRate;
         this.parValue = parValue;
         this.maturityDate = maturityDate;
@@ -94,11 +92,6 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
 
     public String getBondStatus() {
         return bondStatus;
-    }
-
-    @Deprecated // don't see any use for it
-    public int getCouponPaymentLeft() {
-        return couponPaymentLeft;
     }
 
     public double getInterestRate() {
@@ -142,8 +135,8 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         return totalUnits;
     }
 
-    public int getPaymentsPerYear() {
-        return paymentsPerYear;
+    public int getPaymentFrequencyInMonths() {
+        return paymentFrequencyInMonths;
     }
 
     /* This method returns a TokenPointer by using the linear Id of the evolvable state */
@@ -161,7 +154,7 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
 
         if (!issuer.equals(termState.issuer)) return false;
         if (!bondName.equals(termState.bondName)) return false;
-        if (!(paymentsPerYear == termState.paymentsPerYear)) return false;
+        if (!(paymentFrequencyInMonths == termState.paymentFrequencyInMonths)) return false;
         return linearId.equals(termState.linearId);
     }
 
@@ -170,7 +163,7 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         int result = issuer.hashCode();
         result = 31 * result + bondName.hashCode();
         result = 31 * result + linearId.hashCode();
-        result = 31 * result + paymentsPerYear;
+        result = 31 * result + paymentFrequencyInMonths;
         return result;
     }
 
@@ -181,13 +174,12 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         sb.append(", bondStatus='").append(bondStatus).append('\'');
         sb.append(", bondName='").append(bondName).append('\'');
         sb.append(", currency='").append(currency).append('\'');
-        sb.append(", couponPaymentLeft=").append(couponPaymentLeft);
         sb.append(", interestRate=").append(interestRate);
         sb.append(", parValue=").append(parValue);
         sb.append(", maturityDate='").append(maturityDate).append('\'');
         sb.append(", creditRating='").append(creditRating).append('\'');
         sb.append(", totalUnits=").append(totalUnits);
-        sb.append(", paymentsPerYear='").append(paymentsPerYear);
+        sb.append(", paymentFrequencyInMonths='").append(paymentFrequencyInMonths);
         sb.append(", unitsAvailable=").append(unitsAvailable);
         sb.append(", redemptionAvailable=").append(redemptionAvailable);
         sb.append(", bondType='").append(bondType).append('\'');
@@ -211,13 +203,12 @@ public class TermState extends EvolvableTokenType implements StatePersistable {
         sb.append(",\"bondStatus\":").append("\"").append(bondStatus).append("\"");
         sb.append(",\"bondName\":").append("\"").append(bondName).append("\"");
         sb.append(",\"currency\":").append("\"").append(currency).append("\"");
-        sb.append(",\"couponPaymentLeft\":").append(couponPaymentLeft);
         sb.append(",\"interestRate\":").append(interestRate);
         sb.append(",\"parValue\":").append(parValue);
         sb.append(",\"maturityDate\":").append(maturityDate);
         sb.append(",\"creditRating\":").append("\"").append(creditRating).append("\"");
         sb.append(",\"totalUnits\":").append(totalUnits);
-        sb.append(",\"paymentsPerYear\":").append(paymentsPerYear);
+        sb.append(",\"paymentFrequencyInMonths\":").append(paymentFrequencyInMonths);
         sb.append(",\"unitsAvailable\":").append(unitsAvailable);
         sb.append(",\"redemptionAvailable\":").append(redemptionAvailable);
         sb.append(",\"bondType\":").append("\"").append(bondType).append("\"");

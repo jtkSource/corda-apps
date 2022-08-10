@@ -3,6 +3,7 @@ package com.jtk.bond.issuance.flows;
 import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.collect.ImmutableList;
 import com.jtk.bond.issuance.constants.CordaParties;
+import com.jtk.bond.issuance.flows.utils.CouponPaymentUtil;
 import com.jtk.bond.issuance.flows.utils.CustomQuery;
 import com.jtk.bond.issuance.state.BondState;
 import com.jtk.bond.issuance.state.TermState;
@@ -29,6 +30,9 @@ import net.corda.core.transactions.SignedTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -46,6 +50,7 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
 
     private static final Logger log = LoggerFactory.getLogger(RequestForBondResponderFlow.class);
 
+    private static final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
     private final FlowSession investorSession;
 
     public RequestForBondResponderFlow(FlowSession investorSession){
@@ -99,12 +104,11 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
         /*** Update the TermState ****/
         TermState newTermState = new TermState(
                 investorTermState.getIssuer(), investors,investorTermState.getBondName(),
-                investorTermState.getBondStatus(),investorTermState.getCouponPaymentLeft(),
-                investorTermState.getInterestRate(),investorTermState.getParValue(),
+                investorTermState.getBondStatus(),investorTermState.getInterestRate(),investorTermState.getParValue(),
                 newAvailableUnits, (investorTermState.getRedemptionAvailable() + brn.units),
                 investorTermState.getLinearId(),investorTermState.getMaturityDate(),
                 investorTermState.getBondType(),investorTermState.getCurrency(),
-                investorTermState.getCreditRating(), investorTermState.getPaymentsPerYear());
+                investorTermState.getCreditRating(), investorTermState.getPaymentFrequencyInMonths());
 
         List<Party> termObservers = new ArrayList<>();
         termObservers.addAll(allBanks);
@@ -118,11 +122,20 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
         /*** Published new TermState ****/
 
         /** Issue a bond **/
+        LocalDate mDate = LocalDate.parse(newTermState.getMaturityDate(), dateFormatter);
+        LocalDate now = LocalDate.now();
+        long numberOfPayments = CouponPaymentUtil.getCouponPayments(newTermState.getPaymentFrequencyInMonths(),
+                30, mDate, now);
+        LocalDate nextCouponDate = CouponPaymentUtil.getNextCouponPaymentDate(now,30, newTermState.getPaymentFrequencyInMonths());
+        String issueDate = dateFormatter.format(now);
+        String nCouponDate = dateFormatter.format(nextCouponDate);
+
+        log.info("next coupon payment date: {}", nCouponDate);
         final BondState bondState = new BondState(
                 getOurIdentity(),brn.investor,newTermState.getInterestRate(),newTermState.getParValue(),
-                newTermState.getMaturityDate(), newTermState.getCreditRating(), newTermState.getCouponPaymentLeft(),
+                newTermState.getMaturityDate(), newTermState.getCreditRating(), numberOfPayments,
                 newTermState.getBondStatus(), newTermState.getBondType(), newTermState.getCurrency(), newTermState.getBondName(),
-                newTermState.getLinearId(),new UniqueIdentifier(), newTermState.getPaymentsPerYear());
+                newTermState.getLinearId(),new UniqueIdentifier(), newTermState.getPaymentFrequencyInMonths(), issueDate, nCouponDate);
 
         TransactionState<BondState> transactionState = new TransactionState<>(bondState, notary);
         List<Party> bondObservers = new ArrayList<>();
