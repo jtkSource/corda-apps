@@ -1,0 +1,173 @@
+buildscript {
+    Properties constants = new Properties()
+    file("$projectDir/../constants.properties").withInputStream { constants.load(it) }
+
+    ext {
+        corda_release_group = constants.getProperty("cordaReleaseGroup")
+        corda_release_version = constants.getProperty("cordaVersion")
+        corda_gradle_plugins_version = constants.getProperty("gradlePluginsVersion")
+        junit_version = constants.getProperty("junitVersion")
+        quasar_version = constants.getProperty("quasarVersion")
+        log4j_version = constants.getProperty("log4jVersion")
+        slf4j_version = constants.getProperty("slf4jVersion")
+        corda_platform_version = constants.getProperty("platformVersion")
+        guava_version = constants.getProperty("guavaVersion")
+
+        //token dependency
+        tokens_release_group = constants.getProperty("tokensReleaseGroup")
+        tokens_release_version = constants.getProperty("tokensReleaseVersion")
+        confidential_id_release_version = constants.getProperty("confidentialIdReleaseVersion")
+        confidential_id_release_group = constants.getProperty("confidentialIdReleaseGroup")
+
+        // webserver dependencies
+        vertx_version = "4.3.2"
+        junit_jupiter_version = "5.7.0"
+        main_class_name = "com.jtk.cordapp.cash.issuance.client.MainVerticle"
+
+    }
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven { url "https://plugins.gradle.org/m2/" }
+        maven { url 'https://software.r3.com/artifactory/corda' }
+    }
+
+    dependencies {
+        classpath "net.corda.plugins:cordapp:$corda_gradle_plugins_version"
+        classpath "net.corda.plugins:cordformation:$corda_gradle_plugins_version"
+        classpath "net.corda.plugins:quasar-utils:$corda_gradle_plugins_version"
+        classpath "net.corda.plugins:quasar-utils:$corda_gradle_plugins_version"
+        classpath "gradle.plugin.io.vertx:vertx-gradle-plugin:1.0.3"
+
+    }
+}
+
+allprojects {
+    apply plugin: 'java'
+
+    repositories {
+        mavenLocal()
+
+        mavenCentral()
+        maven { url 'https://software.r3.com/artifactory/corda' }
+        maven { url "https://software.r3.com/artifactory/corda-dependencies" }
+        maven { url 'https://jitpack.io' }
+        //SDK lib
+        maven { url 'https://software.r3.com/artifactory/corda-lib' }
+        maven { url 'https://software.r3.com/artifactory/corda-lib-dev' }
+        //Gradle Plugins
+        maven { url 'https://repo.gradle.org/gradle/libs-releases' }
+        maven { url "https://plugins.gradle.org/m2/" }
+    }
+
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-parameters" // Required by Corda's serialisation framework.
+    }
+
+    jar {
+        // This makes the JAR's SHA-256 hash repeatable.
+        preserveFileTimestamps = false
+        reproducibleFileOrder = true
+        baseName "cash-issuance-${project.name}"
+    }
+}
+
+
+apply plugin: 'net.corda.plugins.cordapp'
+apply plugin: 'net.corda.plugins.cordformation'
+apply plugin: 'net.corda.plugins.quasar-utils'
+
+sourceSets {
+    main {
+        resources {
+            srcDir rootProject.file("config/dev")
+        }
+    }
+}
+
+dependencies {
+    testCompile "junit:junit:$junit_version"
+
+    // Corda dependencies.
+    cordaCompile "$corda_release_group:corda-core:$corda_release_version"
+    cordaCompile "$corda_release_group:corda-node-api:$corda_release_version"
+    cordaRuntime "$corda_release_group:corda:$corda_release_version"
+
+    // CorDapp dependencies.
+    cordapp project(":workflows")
+    cordapp project(":contracts")
+
+    // For logging
+    cordaCompile "org.apache.logging.log4j:log4j-slf4j-impl:${log4j_version}"
+    cordaCompile "org.apache.logging.log4j:log4j-web:${log4j_version}"
+    cordaCompile "org.slf4j:jul-to-slf4j:$slf4j_version"
+    cordaDriver "net.corda:corda-shell:4.9"
+
+    // Token SDK dependencies.
+    //  cordapp "$confidential_id_release_group:ci-workflows:$confidential_id_release_version"
+    cordapp "$tokens_release_group:tokens-contracts:$tokens_release_version"
+    cordapp "$tokens_release_group:tokens-workflows:$tokens_release_version"
+    //  cordapp "$tokens_release_group:tokens-money:$tokens_release_version"
+    //  cordapp "$tokens_release_group:tokens-selection:$tokens_release_version"
+}
+
+task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
+    nodeDefaults {
+        projectCordapp {
+            deploy = false
+        }
+        cordapp("$tokens_release_group:tokens-contracts:$tokens_release_version")
+        cordapp("$tokens_release_group:tokens-workflows:$tokens_release_version")
+        cordapp project(':contracts')
+        cordapp project(':workflows')
+	    runSchemaMigration = true
+    }
+    node {
+        name "CN=SGX Notary,OU=Notary,O=SGX,L=Singapore,C=SG"
+        notary = [validating : false]
+        p2pPort 10002
+        rpcSettings {
+            address("localhost:10003")
+            adminAddress("localhost:10033")
+        }
+        cordapps = []
+    }
+    node {
+        name "CN=Goldman Sachs,OU=Bank,O=Goldman Sachs,L=New York,C=US"
+        p2pPort 10005
+        rpcSettings {
+            address("localhost:10006")
+            adminAddress("localhost:10036")
+        }
+        rpcUsers = [[ user: "gs1", "password": "test", "permissions": ["ALL"]]]
+    }
+    node {
+        name "CN=HSBC,OU=Bank,O=HSBC,L=London,C=GB"
+        p2pPort 10008
+        rpcSettings {
+            address("localhost:10009")
+            adminAddress("localhost:10039")
+        }
+        rpcUsers = [[ user: "hsbc1", "password": "test", "permissions": ["ALL"]]]
+    }
+    node {
+        name "CN=Central Bank,OU=CBDC,O=Central Bank,L=Singapore,C=SG"
+        p2pPort 10012
+        rpcSettings {
+            address("localhost:10013")
+            adminAddress("localhost:10043")
+        }
+        rpcUsers = [[ user: "cb1", "password": "test", "permissions": ["ALL"]]]
+    }
+    node {
+        name "CN=MAS,OU=Observer,O=MAS,L=Singapore,C=SG"
+        p2pPort 10015
+        rpcSettings {
+            address("localhost:10016")
+            adminAddress("localhost:10046")
+        }
+        rpcUsers = [[ user: "mas1", "password": "test", "permissions": ["ALL"]]]
+    }
+}
+
