@@ -17,14 +17,14 @@ import java.util.List;
 
 @CordaSerializable
 @BelongsToContract(CashStateContract.class)
-public class CashSate extends EvolvableTokenType implements StatePersistable {
+public class CashState extends EvolvableTokenType implements StatePersistable {
     private final String currencyCode;
     private final double usdPairRate;
     private final int fractionalDigits;
     private final UniqueIdentifier linearStateId;
     private final Party issuer;
 
-    public CashSate(String currencyCode, double usdPairRate,  Party issuer, UniqueIdentifier linearStateId) {
+    public CashState(String currencyCode, double usdPairRate, Party issuer, UniqueIdentifier linearStateId) {
         this.currencyCode = currencyCode;
         this.fractionalDigits = Currency.getInstance(currencyCode).getDefaultFractionDigits();
         this.usdPairRate = usdPairRate;
@@ -69,8 +69,8 @@ public class CashSate extends EvolvableTokenType implements StatePersistable {
         return linearStateId;
     }
 
-    public TokenPointer<CashSate> toPointer(){
-        return new TokenPointer<>(new LinearPointer<>(linearStateId, CashSate.class), fractionalDigits);
+    public TokenPointer<CashState> toPointer(){
+        return new TokenPointer<>(new LinearPointer<>(linearStateId, CashState.class), fractionalDigits);
     }
 
     @Override
@@ -78,7 +78,7 @@ public class CashSate extends EvolvableTokenType implements StatePersistable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        CashSate cashSate = (CashSate) o;
+        CashState cashSate = (CashState) o;
 
         if (!currencyCode.equals(cashSate.currencyCode)) return false;
         if (!linearStateId.equals(cashSate.linearStateId)) return false;
