@@ -37,10 +37,14 @@ public class CashState extends EvolvableTokenType implements StatePersistable {
         return fractionalDigits;
     }
 
-    @NotNull
     @Override
     public List<Party> getMaintainers() {
         return ImmutableList.of(issuer);
+    }
+
+    @Override
+    public UniqueIdentifier getLinearId() {
+        return linearStateId;
     }
 
     public Party getIssuer() {
@@ -61,12 +65,6 @@ public class CashState extends EvolvableTokenType implements StatePersistable {
 
     public int getFractionalDigits() {
         return fractionalDigits;
-    }
-
-    @NotNull
-    @Override
-    public UniqueIdentifier getLinearId() {
-        return linearStateId;
     }
 
     public TokenPointer<CashState> toPointer(){
