@@ -1,8 +1,8 @@
 package com.jtk.corda.workflows.utils;
 
-import com.jtk.bond.issuance.contract.contants.BondStatus;
-import com.jtk.bond.issuance.state.BondState;
-import com.jtk.bond.issuance.state.TermState;
+import com.jtk.corda.contants.BondStatus;
+import com.jtk.corda.states.bond.issuance.BondState;
+import com.jtk.corda.states.bond.issuance.TermState;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.node.ServiceHub;

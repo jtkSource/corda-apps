@@ -1,8 +1,8 @@
-package com.jtk.bond.issuance.contract;
+package com.jtk.corda.contracts.bond.issuance;
 
-import com.jtk.bond.issuance.contract.contants.BondCreditRating;
-import com.jtk.bond.issuance.contract.contants.BondType;
-import com.jtk.bond.issuance.state.TermState;
+import com.jtk.corda.contants.BondCreditRating;
+import com.jtk.corda.contants.BondType;
+import com.jtk.corda.states.bond.issuance.TermState;
 import com.r3.corda.lib.tokens.contracts.EvolvableTokenContract;
 import net.corda.core.contracts.Contract;
 import net.corda.core.transactions.LedgerTransaction;
@@ -20,7 +20,7 @@ import static net.corda.core.contracts.ContractsDSL.requireThat;
  *  As per requirement you can prevent the change of some fields if required.
  */
 public class TermContract extends EvolvableTokenContract implements Contract {
-    public static final String CONTRACT_ID = "com.jtk.bond.issuance.contract.TermContract";
+    public static final String CONTRACT_ID = "com.jtk.corda.contracts.bond.issuance.TermContract";
     private static final Logger log = LoggerFactory.getLogger(TermContract.class);
     final DateTimeFormatter locateDateformat = DateTimeFormatter.ofPattern("yyyyMMdd");
 

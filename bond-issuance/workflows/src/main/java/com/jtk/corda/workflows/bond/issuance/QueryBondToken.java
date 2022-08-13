@@ -2,7 +2,7 @@ package com.jtk.corda.workflows.bond.issuance;
 
 import co.paralleluniverse.fibers.Suspendable;
 import com.jtk.corda.workflows.utils.CustomQuery;
-import com.jtk.bond.issuance.state.BondState;
+import com.jtk.corda.states.bond.issuance.BondState;
 import com.r3.corda.lib.tokens.contracts.types.TokenPointer;
 import com.r3.corda.lib.tokens.contracts.types.TokenType;
 import com.r3.corda.lib.tokens.workflows.utilities.QueryUtilities;

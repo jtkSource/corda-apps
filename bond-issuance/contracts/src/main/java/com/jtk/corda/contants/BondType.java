@@ -1,4 +1,4 @@
-package com.jtk.bond.issuance.contract.contants;
+package com.jtk.corda.contants;
 
 import net.corda.core.serialization.CordaSerializable;
 

@@ -1,8 +1,8 @@
-package com.jtk.bond.issuance.contract;
+package com.jtk.corda.contracts.bond.issuance;
 
-import com.jtk.bond.issuance.contract.contants.BondCreditRating;
-import com.jtk.bond.issuance.contract.contants.BondType;
-import com.jtk.bond.issuance.state.BondState;
+import com.jtk.corda.contants.BondCreditRating;
+import com.jtk.corda.contants.BondType;
+import com.jtk.corda.states.bond.issuance.BondState;
 import com.r3.corda.lib.tokens.contracts.EvolvableTokenContract;
 import net.corda.core.contracts.Contract;
 import net.corda.core.transactions.LedgerTransaction;
@@ -16,7 +16,7 @@ import java.time.format.DateTimeFormatter;
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
 public class BondContract extends EvolvableTokenContract implements Contract {
-    public static final String CONTRACT_ID = "com.jtk.bond.issuance.contract.BondContract";
+    public static final String CONTRACT_ID = "com.jtk.corda.contracts.bond.issuance.BondContract";
     private static final Logger log = LoggerFactory.getLogger(BondContract.class);
     final DateTimeFormatter locateDateformat = DateTimeFormatter.ofPattern("yyyyMMdd");
 

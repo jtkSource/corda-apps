@@ -72,7 +72,7 @@ public class FlowTests {
                         emptyMap()))
                 .withNotarySpecs(ImmutableList.of(new MockNetworkNotarySpec(NOTARY.getName())))
                 .withCordappsForAllNodes(ImmutableList.of(
-                        TestCordapp.findCordapp("com.jtk.bond.issuance.contract"),
+                        TestCordapp.findCordapp("com.jtk.corda.contracts"),
                         TestCordapp.findCordapp("com.jtk.corda.workflows"),
                         TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
                         TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows")

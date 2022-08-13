@@ -1,7 +1,7 @@
-package com.jtk.bond.issuance.state;
+package com.jtk.corda.states.bond.issuance;
 
 import com.google.common.collect.ImmutableList;
-import com.jtk.bond.issuance.contract.TermContract;
+import com.jtk.corda.contracts.bond.issuance.TermContract;
 import com.r3.corda.lib.tokens.contracts.states.EvolvableTokenType;
 import com.r3.corda.lib.tokens.contracts.types.TokenPointer;
 import net.corda.core.contracts.BelongsToContract;
