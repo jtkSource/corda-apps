@@ -89,7 +89,7 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
             throw new FlowException("Cannot request for bonds more than available in TermState");
         }
         IdentityService identityService = getServiceHub().getIdentityService();
-        CordaX500Name notaryX500Name = CordaX500Name.parse(CordaParties.NOTARY.getCordaX500Name());
+        CordaX500Name notaryX500Name = CordaParties.NOTARY.getCordaX500Name();
         final Party notary = getServiceHub().getNetworkMapCache().getNotary(notaryX500Name);
         Set<Party> investors = new HashSet<>(investorTermState.getInvestors());
         investors.add(brn.investor);

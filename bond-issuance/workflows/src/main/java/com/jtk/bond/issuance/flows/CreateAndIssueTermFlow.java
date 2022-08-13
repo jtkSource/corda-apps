@@ -71,7 +71,7 @@ public class CreateAndIssueTermFlow extends FlowLogic<String> {
         if(!company.getName().getOrganisationUnit().equals("Bank")) {
             throw new IllegalArgumentException("Only Banks can call CreateAndIssueTerm...");
         }
-        CordaX500Name notaryX500Name = CordaX500Name.parse(CordaParties.NOTARY.getCordaX500Name());
+        CordaX500Name notaryX500Name = CordaParties.NOTARY.getCordaX500Name();
         IdentityService identityService = getServiceHub().getIdentityService();
         List<Party> otherBanks = Utility.getLegalIdentitiesByOU(identityService, "Bank")
                 .stream()

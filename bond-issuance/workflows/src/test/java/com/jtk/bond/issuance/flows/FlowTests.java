@@ -27,7 +27,6 @@ import java.util.concurrent.ExecutionException;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public class FlowTests {
 
