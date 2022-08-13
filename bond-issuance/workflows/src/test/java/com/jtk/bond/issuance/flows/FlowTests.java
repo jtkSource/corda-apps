@@ -1,6 +1,10 @@
 package com.jtk.bond.issuance.flows;
 
 import com.google.common.collect.ImmutableList;
+import com.jtk.corda.workflows.bond.issuance.CreateAndIssueTermFlow;
+import com.jtk.corda.workflows.bond.issuance.QueryBondTermsFlow;
+import com.jtk.corda.workflows.bond.issuance.QueryBondsFlow;
+import com.jtk.corda.workflows.bond.issuance.RequestForBondInitiatorFlow;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.CordaX500Name;
@@ -69,7 +73,7 @@ public class FlowTests {
                 .withNotarySpecs(ImmutableList.of(new MockNetworkNotarySpec(NOTARY.getName())))
                 .withCordappsForAllNodes(ImmutableList.of(
                         TestCordapp.findCordapp("com.jtk.bond.issuance.contract"),
-                        TestCordapp.findCordapp("com.jtk.bond.issuance.flows"),
+                        TestCordapp.findCordapp("com.jtk.corda.workflows"),
                         TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
                         TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows")
                 ))

@@ -1,7 +1,7 @@
-package com.jtk.bond.issuance.flows;
+package com.jtk.corda.workflows.bond.issuance;
 
 import co.paralleluniverse.fibers.Suspendable;
-import com.jtk.bond.issuance.flows.utils.CustomQuery;
+import com.jtk.corda.workflows.utils.CustomQuery;
 import com.jtk.bond.issuance.state.TermState;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;

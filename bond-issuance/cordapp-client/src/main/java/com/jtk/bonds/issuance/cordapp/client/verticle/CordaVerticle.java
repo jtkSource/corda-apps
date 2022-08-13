@@ -2,6 +2,7 @@ package com.jtk.bonds.issuance.cordapp.client.verticle;
 
 import com.jtk.bond.issuance.flows.*;
 import com.jtk.bonds.issuance.cordapp.client.utils.NodeRPCConnection;
+import com.jtk.corda.workflows.bond.issuance.*;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;

@@ -1,8 +1,8 @@
-package com.jtk.bond.issuance.flows;
+package com.jtk.corda.workflows.bond.issuance;
 
 import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.collect.ImmutableList;
-import com.jtk.bond.issuance.flows.utils.CustomQuery;
+import com.jtk.corda.workflows.utils.CustomQuery;
 import com.jtk.bond.issuance.state.TermState;
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
 import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType;

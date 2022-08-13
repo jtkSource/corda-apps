@@ -1,4 +1,4 @@
-package com.jtk.bond.issuance.constants;
+package com.jtk.corda;
 
 import net.corda.core.identity.CordaX500Name;
 import net.corda.core.serialization.CordaSerializable;

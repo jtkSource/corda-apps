@@ -1,8 +1,8 @@
-package com.jtk.bond.issuance.flows;
+package com.jtk.corda.workflows.bond.issuance;
 
 import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.collect.ImmutableList;
-import com.jtk.bond.issuance.constants.CordaParties;
+import com.jtk.corda.CordaParties;
 import com.jtk.bond.issuance.contract.contants.BondStatus;
 import com.jtk.bond.issuance.state.TermState;
 import com.jtk.corda.Utility;
