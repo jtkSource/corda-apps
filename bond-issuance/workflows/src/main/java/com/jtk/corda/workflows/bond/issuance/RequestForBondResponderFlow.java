@@ -7,7 +7,7 @@ import com.jtk.corda.workflows.utils.CustomQuery;
 import com.jtk.corda.CordaParties;
 import com.jtk.corda.states.bond.issuance.BondState;
 import com.jtk.corda.states.bond.issuance.TermState;
-import com.jtk.corda.Utility;
+import com.jtk.corda.workflows.utils.Utility;
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.CreateEvolvableTokens;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.IssueTokens;
