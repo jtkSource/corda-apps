@@ -1,10 +1,13 @@
-package com.jtk.bond.issuance.flows;
+package com.jtk.corda.workflows;
 
 import com.google.common.collect.ImmutableList;
 import com.jtk.corda.workflows.bond.issuance.CreateAndIssueTermFlow;
 import com.jtk.corda.workflows.bond.issuance.QueryBondTermsFlow;
 import com.jtk.corda.workflows.bond.issuance.QueryBondsFlow;
 import com.jtk.corda.workflows.bond.issuance.RequestForBondInitiatorFlow;
+import com.jtk.corda.workflows.cash.issuance.CreateCashFlow;
+import com.jtk.corda.workflows.cash.issuance.QueryCashTokenFlow;
+import com.jtk.corda.workflows.cash.issuance.TransferTokenFlow;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.CordaX500Name;
@@ -25,6 +28,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.concurrent.ExecutionException;
 
@@ -43,6 +47,11 @@ public class FlowTests {
     protected StartedMockNode hsbcNode;
 
     protected Party notaryParty;
+    private Party gsParty;
+    private Party cbParty;
+    private Party hsbcParty;
+
+    private StartedMockNode cbNode;
 
     // "CN=Goldman Sachs,OU=Bank,O=Goldman Sachs,L=New York,C=US"
     public static TestIdentity GS = new TestIdentity(new CordaX500Name("Goldman Sachs", "Bank",
@@ -58,6 +67,8 @@ public class FlowTests {
 
     public static TestIdentity NOTARY = new TestIdentity(new CordaX500Name("SGX Notary", "Notary",
             "SGX", "Singapore", null, "SG"));
+    public static TestIdentity CB = new TestIdentity(new CordaX500Name("Central Bank", "CBDC",
+            "Central Bank", "Singapore", null, "SG"));
 
     @Before
     public void setup() throws ExecutionException, InterruptedException {
@@ -80,7 +91,11 @@ public class FlowTests {
                 .withThreadPerNode(false)
         );
         gsNode = network.createNode(GS.getName());
+        gsParty = gsNode.getInfo().getLegalIdentities().get(0);
+        cbNode = network.createNode(CB.getName());
+        cbParty = cbNode.getInfo().getLegalIdentities().get(0);
         hsbcNode = network.createNode(HSBC.getName());
+        hsbcParty = hsbcNode.getInfo().getLegalIdentities().get(0);
         observerNode = network.createNode(OBSERVER.getName());
         notaryNode = network.getDefaultNotaryNode();
         notaryParty = notaryNode.getInfo().getLegalIdentities().get(0);
@@ -169,5 +184,96 @@ public class FlowTests {
         assertEquals("RFB-GS-TEST1",json.getString("bondName"));
         assertEquals(termLinearId, json.getString("termStateLinearID"));
     }
+    @Test
+    public void testIssueCash() throws ExecutionException, InterruptedException {
+        CordaFuture<String> future = cbNode.startFlow(new CreateCashFlow("2123456789.987654","INR",79.63));
+        network.runNetwork();
+        String response = future.get().split(">")[1];
+        JSONObject json = (JSONObject) new JSONTokener(response).nextValue();
+        assertEquals("INR",json.getString("currencyCode"));
 
+        BigDecimal total = cbNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("INR")).get();
+        assertEquals(new BigDecimal("2123456789.98"),total); // becuase the fractionDigits is 2 for currencies
+        total = gsNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("INR")).get();
+        assertEquals(new BigDecimal("0.0"),total);
+
+        total = observerNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("INR")).get();
+        assertEquals(new BigDecimal("0.0"),total);
+    }
+
+    @Test
+    public void testIssueCashPublishMultipleToken() throws ExecutionException, InterruptedException {
+        CordaFuture<String> future = cbNode.startFlow(new CreateCashFlow("10000","SGD",79.63));
+        network.runNetwork();
+        String response = future.get().split(">")[1];
+        JSONObject json = (JSONObject) new JSONTokener(response).nextValue();
+        assertEquals("10000.00",json.getString("amount"));
+
+        CordaFuture<String> future1 = cbNode.startFlow(new CreateCashFlow("20000","SGD",79.63));
+        network.runNetwork();
+        response = future1.get().split(">")[1];
+        json = (JSONObject) new JSONTokener(response).nextValue();
+        assertEquals("20000.00",json.getString("amount"));
+
+        BigDecimal total = cbNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("SGD")).get();
+        assertEquals(0, new BigDecimal("30000.00").compareTo(total)); // because the fractionDigits is 2 for currencies
+    }
+
+
+    @Test
+    public void testTransferTokensToBankFromCB() throws ExecutionException, InterruptedException {
+        CordaFuture<String> future = cbNode.startFlow(new CreateCashFlow("10000","USD",1.37));
+        network.runNetwork();
+        String response = future.get().split(">")[1];
+        JSONObject json = (JSONObject) new JSONTokener(response).nextValue();
+        assertEquals("10000.00",json.getString("amount"));
+
+        CordaFuture<String> transferTogsF = cbNode.startFlow(new TransferTokenFlow.TransferTokenInitiator("2000", "USD", gsParty));
+        network.runNetwork();
+        response = transferTogsF.get().split(">")[1];
+        json = (JSONObject) new JSONTokener(response).nextValue();
+        assertEquals("2000.00",json.getString("amount"));
+
+        BigDecimal total = gsNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("USD")).get();
+        assertEquals(0, new BigDecimal("2000.00").compareTo(total)); // because the fractionDigits is 2 for currencies
+
+        total = cbNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("USD")).get();
+        assertEquals(0, new BigDecimal("8000.00").compareTo(total)); // because the fractionDigits is 2 for currencies
+
+    }
+
+    @Test
+    public void testTransferTokensToBankFromBank() throws ExecutionException, InterruptedException {
+        CordaFuture<String> future = cbNode.startFlow(new CreateCashFlow("10000","EUR",0.97));
+        network.runNetwork();
+        String response = future.get().split(">")[1];
+        JSONObject json = (JSONObject) new JSONTokener(response).nextValue();
+        assertEquals("10000.00",json.getString("amount"));
+
+        CordaFuture<String> transferTogsF = cbNode.startFlow(new TransferTokenFlow.TransferTokenInitiator("5000", "EUR", gsParty));
+        network.runNetwork();
+        response = transferTogsF.get().split(">")[1];
+        json = (JSONObject) new JSONTokener(response).nextValue();
+        assertEquals("5000.00",json.getString("amount"));
+
+        BigDecimal total = gsNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("EUR")).get();
+        assertEquals(0, new BigDecimal("5000.00").compareTo(total)); // because the fractionDigits is 2 for currencies
+
+        total = cbNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("EUR")).get();
+        assertEquals(0, new BigDecimal("5000.00").compareTo(total)); // because the fractionDigits is 2 for currencies
+
+        CordaFuture<String> transferTohsbcF  = gsNode.startFlow(new TransferTokenFlow.TransferTokenInitiator("2000", "EUR", hsbcParty));
+        network.runNetwork();
+        response = transferTohsbcF.get().split(">")[1];
+        json = (JSONObject) new JSONTokener(response).nextValue();
+        assertEquals("2000.00",json.getString("amount"));
+
+        total = gsNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("EUR")).get();
+        assertEquals(0, new BigDecimal("3000.00").compareTo(total)); // because the fractionDigits is 2 for currencies
+
+        total = cbNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("EUR")).get();
+        assertEquals(0, new BigDecimal("5000.00").compareTo(total)); // because the fractionDigits is 2 for currencies
+
+
+    }
 }
