@@ -3,6 +3,7 @@ package com.jtk.corda.cash.issuance.flow;
 import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.collect.ImmutableList;
 import com.jtk.corda.cash.issuance.state.CashState;
+import com.jtk.corda.cash.issuance.utils.CustomQuery;
 import com.jtk.corda.workflows.Utility;
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.CreateEvolvableTokens;
@@ -15,6 +16,7 @@ import net.corda.core.flows.FlowLogic;
 import net.corda.core.flows.InitiatingFlow;
 import net.corda.core.flows.StartableByRPC;
 import net.corda.core.identity.Party;
+import net.corda.core.node.services.IdentityService;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.utilities.ProgressTracker;
 import org.slf4j.Logger;
@@ -22,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @InitiatingFlow
 @StartableByRPC
@@ -33,7 +36,7 @@ public class CreateCashFlow extends FlowLogic<String> {
             IDENTIFY_OBSERVERS,
             IDENTIFY_NOTARIES,
             CREATE_TOKEN,
-            SIGNING,
+            ISSUE_TOKENS,
             DONE
     );
 
@@ -47,18 +50,18 @@ public class CreateCashFlow extends FlowLogic<String> {
     private static final ProgressTracker.Step CREATE_TOKEN = new ProgressTracker
             .Step("Creating Tokens");
 
-    private static final ProgressTracker.Step SIGNING = new ProgressTracker
-            .Step("Signing Tokens");
+    private static final ProgressTracker.Step ISSUE_TOKENS = new ProgressTracker
+            .Step("Issue Tokens to singed transaction");
 
     private static final ProgressTracker.Step DONE = new ProgressTracker
             .Step("Done Issuing Tokens");
 
-    private String currency;
+    private String currencyCode;
     private final String amount;
     private double usdRate;
 
-    public CreateCashFlow(String currency, String amount, double usdRate) {
-        this.currency = currency;
+    public CreateCashFlow(String amount, String currencyCode, double usdRate) {
+        this.currencyCode = currencyCode;
         this.amount = amount;
         this.usdRate = usdRate;
     }
@@ -76,7 +79,12 @@ public class CreateCashFlow extends FlowLogic<String> {
         }
         progressTracker.setCurrentStep(IDENTIFY_OBSERVERS);
         List<Party> observers = Utility.getLegalIdentitiesByOU(getServiceHub().getIdentityService(), "Observer");
-        log.info("Observers {}", observers);
+        IdentityService identityService = getServiceHub().getIdentityService();
+        List<Party> otherBanks = Utility.getLegalIdentitiesByOU(identityService, "Bank")
+                .stream()
+                .collect(Collectors.toList());
+        observers.addAll(otherBanks);
+        log.info("Observers {}", observers.stream().map(party -> party.getName().getCommonName()).collect(Collectors.toList()));
         if (observers.size() == 0) {
             throw new FlowException("Cannot issue money without observers");
         }
@@ -84,31 +92,41 @@ public class CreateCashFlow extends FlowLogic<String> {
         Party notary = getServiceHub().getNetworkMapCache()
                 .getNotary(CordaParties.NOTARY.getCordaX500Name());
         progressTracker.setCurrentStep(CREATE_TOKEN);
-        final CashState cashState = new CashState(currency, usdRate, me, new UniqueIdentifier());
-        TransactionState<CashState> transactionState = new TransactionState<>(cashState, notary);
-        subFlow(new CreateEvolvableTokens(transactionState, observers));
-        FungibleToken fungibleCashTokens = new FungibleTokenBuilder()
+        List<CashState> cashStates = CustomQuery.queryCashStateByCurrency(currencyCode, getServiceHub());
+        FungibleToken fungibleCashTokens;
+        CashState cashState;
+        if(cashStates.size() > 0) {
+            cashState = cashStates.get(0);
+            fungibleCashTokens = new FungibleTokenBuilder()
+                    .ofTokenType(cashState.toPointer())
+                    .issuedBy(me)
+                    .heldBy(me)
+                    .withAmount(amountInBG)
+                    .buildFungibleToken();
+            
+        }else {
+            cashState = new CashState(currencyCode, usdRate, me, new UniqueIdentifier());
+            TransactionState<CashState> transactionState = new TransactionState<>(cashState, notary);
+            subFlow(new CreateEvolvableTokens(transactionState, observers));
+        }
+        fungibleCashTokens = new FungibleTokenBuilder()
                 .ofTokenType(cashState.toPointer())
                 .issuedBy(me)
                 .heldBy(me)
                 .withAmount(amountInBG)
                 .buildFungibleToken();
-        progressTracker.setCurrentStep(SIGNING);
-
+        progressTracker.setCurrentStep(ISSUE_TOKENS);
         SignedTransaction stx = subFlow(new IssueTokens(ImmutableList.of(fungibleCashTokens), observers));
-
         progressTracker.setCurrentStep(DONE);
-
         return  String.format("Created Cash Tokens >{ " +
                         "\"currencyCode\":\"%s\"," +
                         "\"linearStateId\":\"%s\"," +
                         "\"issuer\":\"%s\"," +
                         "\"usdPairRate\":\"%f\"," +
-                        "\"amount\":\"%f\"," +
-                        "\"transactionId\":\"%s\"," +
+                        "\"amount\":\"%.2f\"," +
+                        "\"transactionId\":\"%s\"" +
                         " }",cashState.getCurrencyCode(),cashState.getLinearStateId(),
                 cashState.getIssuer().getName().getCommonName(),
-                cashState.getUsdPairRate(), amountInBG,
-                stx.getId());
+                cashState.getUsdPairRate(), amountInBG, stx.getId());
     }
 }
