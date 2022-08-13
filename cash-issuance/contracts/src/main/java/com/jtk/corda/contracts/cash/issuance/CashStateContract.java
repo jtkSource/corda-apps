@@ -1,6 +1,6 @@
-package com.jtk.corda.cash.issuance.contract;
+package com.jtk.corda.contracts.cash.issuance;
 
-import com.jtk.corda.cash.issuance.state.CashState;
+import com.jtk.corda.states.cash.issuance.CashState;
 import com.r3.corda.lib.tokens.contracts.EvolvableTokenContract;
 import net.corda.core.contracts.Contract;
 import net.corda.core.transactions.LedgerTransaction;

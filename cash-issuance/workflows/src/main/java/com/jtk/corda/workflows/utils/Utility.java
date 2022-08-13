@@ -1,4 +1,4 @@
-package com.jtk.corda.workflows;
+package com.jtk.corda.workflows.utils;
 
 import net.corda.core.identity.Party;
 import net.corda.core.node.services.IdentityService;

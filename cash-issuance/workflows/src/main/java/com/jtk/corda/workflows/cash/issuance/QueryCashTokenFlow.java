@@ -1,8 +1,8 @@
-package com.jtk.corda.cash.issuance.flow;
+package com.jtk.corda.workflows.cash.issuance;
 
 import co.paralleluniverse.fibers.Suspendable;
-import com.jtk.corda.cash.issuance.state.CashState;
-import com.jtk.corda.cash.issuance.utils.CustomQuery;
+import com.jtk.corda.states.cash.issuance.CashState;
+import com.jtk.corda.workflows.utils.CustomQuery;
 import com.r3.corda.lib.tokens.contracts.types.TokenPointer;
 import com.r3.corda.lib.tokens.contracts.types.TokenType;
 import com.r3.corda.lib.tokens.workflows.utilities.QueryUtilities;

@@ -1,7 +1,7 @@
-package com.jtk.corda.cash.issuance.state;
+package com.jtk.corda.states.cash.issuance;
 
 import com.google.common.collect.ImmutableList;
-import com.jtk.corda.cash.issuance.contract.CashStateContract;
+import com.jtk.corda.contracts.cash.issuance.CashStateContract;
 import com.r3.corda.lib.tokens.contracts.states.EvolvableTokenType;
 import com.r3.corda.lib.tokens.contracts.types.TokenPointer;
 import net.corda.core.contracts.BelongsToContract;
@@ -10,7 +10,6 @@ import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.Party;
 import net.corda.core.schemas.StatePersistable;
 import net.corda.core.serialization.CordaSerializable;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Currency;
 import java.util.List;

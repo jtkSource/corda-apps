@@ -1,4 +1,4 @@
-package com.jtk.corda.cash.issuance.flow;
+package com.jtk.corda.workflows;
 
 import net.corda.core.identity.CordaX500Name;
 
