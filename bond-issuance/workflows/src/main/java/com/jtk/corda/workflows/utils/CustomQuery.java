@@ -106,6 +106,20 @@ public class CustomQuery {
                 .collect(Collectors.toList());
 
     }
+    public static List<BondState> queryBondsPointerWithCouponDate(String couponDate, ServiceHub serviceHub) {
+        List<StateAndRef<BondState>> statesAndRef = serviceHub.getVaultService().queryBy(BondState.class).getStates();
+        return statesAndRef.stream()
+                .map(sr->sr.getState().getData().toPointer(BondState.class))
+                .map(p->p.getPointer().resolve(serviceHub).getState().getData())
+                .filter(ts-> ts.getBondStatus().equals(BondStatus.ACTIVE.name()))
+                .filter(ts-> {
+                    LocalDate nextCouponDate = LocalDate.parse(ts.getNextCouponDate(), locateDateformat);
+                    LocalDate todayCouponDate = LocalDate.parse(couponDate, locateDateformat);
+                    return nextCouponDate.isEqual(todayCouponDate);
+                })
+                .collect(Collectors.toList());
+    }
+
 
     public static Collection<BondState> queryBondsPointerLessThanMaturityDate(String maturityDate, ServiceHub serviceHub) {
         List<StateAndRef<BondState>> statesAndRef = serviceHub.getVaultService().queryBy(BondState.class).getStates();

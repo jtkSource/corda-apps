@@ -86,9 +86,9 @@ public class BondContract extends EvolvableTokenContract implements Contract {
             req.using("Bond payment frequency must not be changed.",
                     (inputBondState.getPaymentFrequencyInMonths() == outputBondState.getPaymentFrequencyInMonths()));
             req.using("Bond maturity date must not be changed.",
-                    (inputBondState.getMaturityDate() == outputBondState.getMaturityDate()));
+                    (inputBondState.getMaturityDate().equals(outputBondState.getMaturityDate())));
             req.using("Bond issue date must not be changed.",
-                    (inputBondState.getIssueDate() == outputBondState.getIssueDate()));
+                    (inputBondState.getIssueDate().equals(outputBondState.getIssueDate())));
             req.using("Bond Name must not be changed.", (inputBondState.getBondName().equals(outputBondState.getBondName())));
             req.using("Bond FractionDigits must not be changed.", (inputBondState.getFractionDigits() == outputBondState.getFractionDigits()));
             return null;

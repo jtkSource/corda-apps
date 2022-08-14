@@ -79,6 +79,7 @@ public class RequestForBondInitiatorFlow extends FlowLogic<String> {
             // then send the bond request notification
             UntrustworthyData<RequestForBondResponderFlow.BondRequestNotification> counterPartyData =
                     termIssuerSession.sendAndReceive(RequestForBondResponderFlow.BondRequestNotification.class, bondRequestNotification);
+
             Boolean successfullySendCash = counterPartyData.unwrap(data -> {
                 if (data.getStatus().equalsIgnoreCase("OK")) {
                     try {

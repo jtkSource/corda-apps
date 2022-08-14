@@ -26,7 +26,7 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
     private final String issueDate;
     private final String nextCouponDate;
     private final String creditRating;
-    private final double couponPaymentLeft;
+    private final long couponPaymentLeft;
     private final String bondType;
     private final String currency;
     private final String bondStatus; // state of the bond
@@ -36,9 +36,9 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
     private final UniqueIdentifier linearId;
 
     public BondState(Party issuer, Party investor, double interestRate, int parValue, String maturityDate,
-                     String creditRating, double couponPaymentLeft, String bondStatus, String bondType, String currency,
-                     String bondName, UniqueIdentifier termStateLinearID,
-                     UniqueIdentifier linearId, int paymentFrequencyInMonths, String issueDate, String nextCouponDate) {
+                     String creditRating, long couponPaymentLeft, String bondStatus, String bondType, String currency,
+                     String bondName, UniqueIdentifier termStateLinearID, UniqueIdentifier linearId,
+                     int paymentFrequencyInMonths, String issueDate, String nextCouponDate) {
         this.issuer = issuer;
         this.investor = investor;
         this.interestRate = interestRate;
@@ -96,7 +96,7 @@ public class BondState extends EvolvableTokenType implements StatePersistable  {
         return creditRating;
     }
 
-    public double getCouponPaymentLeft() {
+    public long getCouponPaymentLeft() {
         return couponPaymentLeft;
     }
 

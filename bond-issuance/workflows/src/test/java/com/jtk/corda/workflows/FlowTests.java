@@ -1,6 +1,8 @@
 package com.jtk.corda.workflows;
 
 import com.google.common.collect.ImmutableList;
+import com.jtk.corda.states.bond.issuance.BondState;
+import com.jtk.corda.workflows.bond.coupons.CouponPaymentFlow;
 import com.jtk.corda.workflows.bond.issuance.CreateAndIssueTermFlow;
 import com.jtk.corda.workflows.bond.issuance.QueryBondTermsFlow;
 import com.jtk.corda.workflows.bond.issuance.QueryBondsFlow;
@@ -8,9 +10,11 @@ import com.jtk.corda.workflows.bond.issuance.RequestForBondInitiatorFlow;
 import com.jtk.corda.workflows.cash.issuance.CreateCashFlow;
 import com.jtk.corda.workflows.cash.issuance.QueryCashTokenFlow;
 import com.jtk.corda.workflows.cash.issuance.TransferTokenFlow;
+import com.jtk.corda.workflows.utils.CustomQuery;
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.ContractState;
+import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
@@ -29,13 +33,14 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 public class FlowTests {
 
@@ -70,6 +75,7 @@ public class FlowTests {
             "SGX", "Singapore", null, "SG"));
     public static TestIdentity CB = new TestIdentity(new CordaX500Name("Central Bank", "CBDC",
             "Central Bank", "Singapore", null, "SG"));
+    private final static DateTimeFormatter locateDateformat = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     @Before
     public void setup() throws ExecutionException, InterruptedException {
@@ -105,6 +111,11 @@ public class FlowTests {
         /**
          * Create Terms for testing
          */
+        // 10 billion GBP issue to CB
+        cbNode.startFlow(new CreateCashFlow("10000000000","GBP",0.82));
+        network.runNetwork();
+        cbNode.startFlow(new CreateCashFlow("10000000000","PHP",55.72));
+        network.runNetwork();
 
         CordaFuture<String> future = gsNode.startFlow(new CreateAndIssueTermFlow("RFB-GS-TEST1",3.2,1000,
                 1000,"20270806", "CB", "USD", "AAA",2));
@@ -152,9 +163,6 @@ public class FlowTests {
 
     @Test
     public void testRequestForBondFlow() throws ExecutionException, InterruptedException {
-        // 10 billion GBP issue to CB
-        cbNode.startFlow(new CreateCashFlow("10000000000","GBP",0.82));
-        network.runNetwork();
         // move 2 million to HSBC
         cbNode.startFlow(new TransferTokenFlow.TransferTokenInitiator("2000000", "GBP", hsbcParty));
         network.runNetwork();
@@ -336,4 +344,88 @@ public class FlowTests {
 
     }
 
+    @Test
+    public void testCouponPayment() throws ExecutionException, InterruptedException {
+        // move 2 million to HSBC
+        cbNode.startFlow(new TransferTokenFlow.TransferTokenInitiator("2000000", "PHP", hsbcParty));
+        network.runNetwork();
+        // move 2 million to GS
+        cbNode.startFlow(new TransferTokenFlow.TransferTokenInitiator("2000000", "PHP", gsParty));
+        network.runNetwork();
+
+        // Create Term
+        LocalDate maturityDate = LocalDate.now().plusYears(1);
+        CordaFuture<String> future = gsNode.startFlow(new CreateAndIssueTermFlow("RFB-GS-TEST-COUPON",3.2,1000,
+                1000, maturityDate.format(locateDateformat), "CB", "PHP", "AAA",2));
+        network.runNetwork();
+        String response = future.get().split(">")[1];
+        JSONObject json = (JSONObject) new JSONTokener(response).nextValue();
+        String termLinearId = json.getString("linearId");
+
+        CordaFuture<String> future1 = hsbcNode.startFlow(new RequestForBondInitiatorFlow(UniqueIdentifier.Companion.fromString(termLinearId), 50));
+        network.runNetwork();
+        String jsonToken = future1.get();
+        json = (JSONObject) new JSONTokener(jsonToken).nextValue();
+        String bondTokenId_50 = json.getString("tokenIdentifier");
+        BondState bond50 = CustomQuery.queryBondByLinearID(UniqueIdentifier.Companion.fromString(bondTokenId_50), gsNode.getServices())
+                .getState().getData();
+        long couponLeftForBond50 = bond50.getCouponPaymentLeft();
+        String nextCouponDateForBond50 = bond50.getNextCouponDate();
+
+        long amountGS = 2000000 + (50*1000);
+        BigDecimal totalGsAmount = gsNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("PHP")).get();
+        assertEquals(0, new BigDecimal(amountGS).compareTo(totalGsAmount));
+        long amountHSBC = 2000000 - (50*1000);
+        BigDecimal totalHSBCAmount = hsbcNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("PHP")).get();
+        assertEquals(0, new BigDecimal(amountHSBC).compareTo(totalHSBCAmount));
+
+        future1 = hsbcNode.startFlow(new RequestForBondInitiatorFlow(UniqueIdentifier.Companion.fromString(termLinearId), 100));
+        network.runNetwork();
+        jsonToken = future1.get();
+        json = (JSONObject) new JSONTokener(jsonToken).nextValue();
+        String bondTokenId_100 = json.getString("tokenIdentifier");
+        assertNotEquals(bondTokenId_50, bondTokenId_100);
+        BondState bond100 = CustomQuery.queryBondByLinearID(UniqueIdentifier.Companion.fromString(bondTokenId_100), gsNode.getServices())
+                .getState().getData();
+        long couponLeftForBond100 = bond100.getCouponPaymentLeft();
+        String nextCouponDateForBond100 = bond100.getNextCouponDate();
+
+        assertEquals(bond50.getNextCouponDate(), bond100.getNextCouponDate());
+
+        amountGS = amountGS + (100 * 1000);
+        totalGsAmount = gsNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("PHP")).get();
+        assertEquals(0, new BigDecimal(amountGS).compareTo(totalGsAmount));
+        amountHSBC = amountHSBC - (100*1000);
+        totalHSBCAmount = hsbcNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("PHP")).get();
+        assertEquals(0, new BigDecimal(amountHSBC).compareTo(totalHSBCAmount));
+
+        CordaFuture<String> gsCouponFuture = gsNode.startFlow(new CouponPaymentFlow(bond50.getNextCouponDate()));
+        network.runNetwork();
+        String msg = gsCouponFuture.get();
+        assertEquals("Completed Goldman Sachs Coupon payment for coupon date: " + bond50.getNextCouponDate(), msg);
+        double coupon1 = 26666.66;
+        double coupon2 = 53333.33;
+        BigDecimal totalWithCoupon = gsNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("PHP")).get();
+        assertEquals(totalGsAmount.doubleValue() - (coupon1 + coupon2), totalWithCoupon.doubleValue(), 0.01); // because the fractionDigits is 2 for currencies
+        totalWithCoupon = hsbcNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("PHP")).get();
+        assertEquals(totalHSBCAmount.doubleValue() + (coupon1 + coupon2), totalWithCoupon.doubleValue(),0.01); // because the fractionDigits is 2 for currencies
+
+        // check Bond States // coupon date and coupon left
+        bond50 = CustomQuery.queryBondByLinearID(UniqueIdentifier.Companion.fromString(bondTokenId_50), gsNode.getServices())
+                .getState().getData();
+        assertEquals(couponLeftForBond50-1, bond50.getCouponPaymentLeft());
+        String nnCouponDate = LocalDate.parse(nextCouponDateForBond50, locateDateformat)
+                .plusMonths(bond50.getPaymentFrequencyInMonths())
+                .format(locateDateformat);
+        assertNotEquals(nnCouponDate, bond50.getNextCouponDate());
+        bond100 = CustomQuery.queryBondByLinearID(UniqueIdentifier.Companion.fromString(bondTokenId_100), gsNode.getServices())
+                .getState().getData();
+        assertEquals(couponLeftForBond100-1, bond100.getCouponPaymentLeft());
+        nnCouponDate = LocalDate.parse(nextCouponDateForBond100, locateDateformat)
+                .plusMonths(bond100.getPaymentFrequencyInMonths())
+                .format(locateDateformat);
+        assertNotEquals(nnCouponDate, bond100.getNextCouponDate());
+
+
+    }
 }

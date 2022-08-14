@@ -85,6 +85,30 @@ public class QueryBondsFlow {
 
     @InitiatingFlow
     @StartableByRPC
+    public static class GetBondWithMaturityDate extends FlowLogic<String>{
+        private final ProgressTracker progressTracker = new ProgressTracker();
+        private final String maturityDate;
+
+        public GetBondWithMaturityDate(String maturityDate) {
+            this.maturityDate = maturityDate;
+        }
+        @Override
+        public ProgressTracker getProgressTracker() {
+            return progressTracker;
+        }
+        @Override
+        @Suspendable
+        public String call() {
+            return CustomQuery.queryBondsPointerGreaterThanMaturityDate(maturityDate, getServiceHub())
+                    .stream().map(BondState::toJson)
+                    .collect(Collectors.toList())
+                    .toString();
+        }
+    }
+
+
+    @InitiatingFlow
+    @StartableByRPC
     public static class GetBondsByCurrency extends FlowLogic<String>{
         private final ProgressTracker progressTracker = new ProgressTracker();
         private final String currency;

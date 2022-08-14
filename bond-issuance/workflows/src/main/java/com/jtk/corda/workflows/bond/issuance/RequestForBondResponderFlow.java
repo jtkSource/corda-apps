@@ -59,7 +59,12 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
     @Suspendable
     @Override
     public SignedTransaction call() throws FlowException {
-        log.info("Called response from investor: {}", investorSession.getCounterparty().getName().getCommonName());
+        Party bondIssuer = getOurIdentity();
+        Party counterparty = investorSession.getCounterparty();
+
+        log.info("Issuing bond from {} to investor: {}",bondIssuer.getName().getCommonName(),
+                counterparty.getName().getCommonName());
+
         List<StateAndRef<TermState>> investorTermStateRefList = subFlow(new ReceiveStateAndRefFlow<>(investorSession));
         StateAndRef<TermState> investorTermStateRef = investorTermStateRefList.get(0);
         TermState investorTermState = investorTermStateRef.getState().getData();
@@ -97,7 +102,7 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
         List<Party> allBanks = Utility.getLegalIdentitiesByOU(identityService, "Bank")
                 .stream()
                 .filter(party -> !Objects.equals(party.getName().getCommonName(),
-                        getOurIdentity().getName().getCommonName()))
+                        bondIssuer.getName().getCommonName()))
                 .collect(Collectors.toList());
         List<Party> observers = Utility.getLegalIdentitiesByOU(identityService,"Observer");
 
@@ -124,15 +129,16 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
         /** Issue a bond **/
         LocalDate mDate = LocalDate.parse(newTermState.getMaturityDate(), dateFormatter);
         LocalDate now = LocalDate.now();
-        long numberOfPayments = CouponPaymentUtil.getCouponPayments(newTermState.getPaymentFrequencyInMonths(),
-                30, mDate, now);
-        LocalDate nextCouponDate = CouponPaymentUtil.getNextCouponPaymentDate(now,30, newTermState.getPaymentFrequencyInMonths());
+        long numberOfPayments = CouponPaymentUtil.getCouponPayments
+                (newTermState.getPaymentFrequencyInMonths(), 30, mDate, now);
+        LocalDate nextCouponDate = CouponPaymentUtil.getNextCouponPaymentDate
+                (now,30, newTermState.getPaymentFrequencyInMonths());
         String issueDate = dateFormatter.format(now);
         String nCouponDate = dateFormatter.format(nextCouponDate);
 
         log.info("next coupon payment date: {}", nCouponDate);
         final BondState bondState = new BondState(
-                getOurIdentity(),brn.investor,newTermState.getInterestRate(),newTermState.getParValue(),
+                bondIssuer,brn.investor,newTermState.getInterestRate(),newTermState.getParValue(),
                 newTermState.getMaturityDate(), newTermState.getCreditRating(), numberOfPayments,
                 newTermState.getBondStatus(), newTermState.getBondType(), newTermState.getCurrency(),
                 newTermState.getBondName(), newTermState.getLinearId(),new UniqueIdentifier(),
@@ -141,14 +147,14 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
         TransactionState<BondState> transactionState = new TransactionState<>(bondState, notary);
         List<Party> bondObservers = new ArrayList<>();
         bondObservers.addAll(observers);
-        bondObservers.add(getOurIdentity());
+        bondObservers.add(bondIssuer);
         subFlow(new CreateEvolvableTokens(transactionState, bondObservers));
 
         log.info("Published evolvable tokens for Bond {} ", bondState.getBondName());
 
         FungibleToken bondFungibleToken = new FungibleTokenBuilder()
                 .ofTokenType(bondState.toPointer())
-                .issuedBy(getOurIdentity())
+                .issuedBy(bondIssuer)
                 .heldBy(brn.investor)
                 .withAmount(brn.units)
                 .buildFungibleToken();
