@@ -94,13 +94,6 @@ public class RequestForBondInitiatorFlow extends FlowLogic<String> {
                         log.error("Couldn't transfer money to counterparty", e);
                         return false;
                     }
-                    /*
-                    // looks like the investor can capture the tokens available on the counterparty -- issue??
-                    FungibleToken receiveToken = outputStates.stream()
-                            .map(contractState -> (FungibleToken) contractState)
-                            .filter(ft -> ft.getHolder().nameOrNull().getCommonName().equals(termState.getIssuer().getName().getCommonName()))
-                            .findAny().get();
-                    */
                     return true;
                 } else {
                     log.warn("Counterparty Rejected BondRequest...");
