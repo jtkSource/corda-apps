@@ -52,7 +52,7 @@ public class TransferTokenFlow {
 
     @InitiatingFlow
     @StartableByRPC
-    public static class TransferTokenInitiator extends FlowLogic<String> {
+    public static class TransferTokenInitiator extends FlowLogic<SignedTransaction> {
         private static final Logger log = LoggerFactory.getLogger(TransferTokenInitiator.class);
 
         private final String currencyCode;
@@ -67,7 +67,7 @@ public class TransferTokenFlow {
 
         @Override
         @Suspendable
-        public String call() throws FlowException {
+        public SignedTransaction call() throws FlowException {
             BigDecimal amountInBG = new BigDecimal(amount);
             log.info("Transferring {} {} to {} ", amountInBG, currencyCode, recipient.getName().getCommonName());
 
@@ -109,7 +109,7 @@ public class TransferTokenFlow {
                         me));
 
                 progressTracker.setCurrentStep(DONE);
-                return  String.format("Transferred Cash Tokens >{ " +
+                log.info(String.format("Transferred Cash Tokens >\n { " +
                                 "\"currencyCode\":\"%s\"," +
                                 "\"issuer\":\"%s\"," +
                                 "\"recipient\":\"%s\"," +
@@ -120,7 +120,9 @@ public class TransferTokenFlow {
                         cashState.getIssuer().getName().getCommonName(),
                         recipient.getName().getCommonName(),
                         amountInBG,
-                        stx.getId());
+                        stx.getId()));
+
+                return stx;
             }else {
                 throw new FlowException("No Cash State ["+currencyCode+"] available ");
             }
