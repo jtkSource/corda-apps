@@ -105,11 +105,10 @@ public class FlowTests {
         /**
          * Create Terms for testing
          */
+
         CordaFuture<String> future = gsNode.startFlow(new CreateAndIssueTermFlow("RFB-GS-TEST1",3.2,1000,
                 1000,"20270806", "CB", "USD", "AAA",2));
         network.runNetwork();
-        String response = future.get();
-        log.info("Response to term creation: {}",response);
     }
     @After
     public void tearDown() {
@@ -153,28 +152,33 @@ public class FlowTests {
 
     @Test
     public void testRequestForBondFlow() throws ExecutionException, InterruptedException {
-        CordaFuture<String> bondByRating = hsbcNode.startFlow(new QueryBondTermsFlow.GetBondTermsByRating("AAA"));
-        String jsonStr = bondByRating.get();
-        log.info("jsonStr {}", jsonStr);
-        JSONArray jArray = (JSONArray) new JSONTokener(jsonStr).nextValue();
-        JSONObject termObject = jArray.getJSONObject(0);
-        assertEquals("AAA", termObject.get("creditRating"));
-        String termLinearId = termObject.getString("linearId");
+        // 10 billion GBP issue to CB
+        cbNode.startFlow(new CreateCashFlow("10000000000","GBP",0.82));
+        network.runNetwork();
+        // move 2 million to HSBC
+        cbNode.startFlow(new TransferTokenFlow.TransferTokenInitiator("2000000", "GBP", hsbcParty));
+        network.runNetwork();
+        // Create Term
+        CordaFuture<String> future = gsNode.startFlow(new CreateAndIssueTermFlow("RFB-GS-TEST-BOND",3.2,1000,
+                1000,"20270806", "CB", "GBP", "AAA",2));
+        network.runNetwork();
 
-        // Get Bond
+        String response = future.get().split(">")[1];
+        JSONObject json = (JSONObject) new JSONTokener(response).nextValue();
+        String termLinearId = json.getString("linearId");
 
-        CordaFuture<String> future = hsbcNode.startFlow(new RequestForBondInitiatorFlow
+        // Request for Bond Issue
+        CordaFuture<String> future1 = hsbcNode.startFlow(new RequestForBondInitiatorFlow
                 (UniqueIdentifier.Companion.fromString(termLinearId), 50));
         network.runNetwork();
-        String jsonToken = future.get();
-        JSONObject json = (JSONObject) new JSONTokener(jsonToken).nextValue();
+        String jsonToken = future1.get();
+        json = (JSONObject) new JSONTokener(jsonToken).nextValue();
 
         assertEquals(50,json.getLong("amount"));
         assertEquals("FungibleToken",json.getString("tokenType"));
         assertEquals("BondState",json.getString("name"));
         assertEquals("Goldman Sachs",json.getString("issuer"));
         assertEquals("HSBC",json.getString("holder"));
-
         String identifier = json.getString("tokenIdentifier");
 
         String bondStateJson = hsbcNode.startFlow(new QueryBondsFlow.GetBondByTermStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId)))
@@ -182,8 +186,14 @@ public class FlowTests {
         JSONArray jsonArray = (JSONArray) new JSONTokener(bondStateJson).nextValue();
         log.info("Bond States JSON {}", jsonArray);
         json = jsonArray.getJSONObject(0);
-        assertEquals("RFB-GS-TEST1",json.getString("bondName"));
+        assertEquals("RFB-GS-TEST-BOND",json.getString("bondName"));
         assertEquals(termLinearId, json.getString("termStateLinearID"));
+        assertEquals(identifier,json.getString("linearId"));
+
+        BigDecimal total = gsNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("GBP")).get();
+        assertEquals(0, new BigDecimal("50000.00").compareTo(total)); // because the fractionDigits is 2 for currencies
+        total = hsbcNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("GBP")).get();
+        assertEquals(0, new BigDecimal("1950000.00").compareTo(total)); // because the fractionDigits is 2 for currencies
     }
     @Test
     public void testIssueCash() throws ExecutionException, InterruptedException {

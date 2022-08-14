@@ -82,6 +82,9 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
                     return it;
                 });
 
+        BondRequestNotification brnRes = new BondRequestNotification(brn.investor, brn.units,"OK");
+        investorSession.send(brnRes);
+
         log.info("Received Request to create {} BondStates",brn.units);
         int newAvailableUnits = investorTermState.getUnitsAvailable() - brn.units;
         if(newAvailableUnits < 0 ){
@@ -162,17 +165,23 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
         private final Party investor;
         private final int units;
 
-        public BondRequestNotification(Party investor, int units) {
+        private final String status;
+
+        public BondRequestNotification(Party investor, int units, String status) {
             this.investor = investor;
             this.units = units;
+            this.status = status;
         }
-
         public int getUnits() {
             return units;
         }
 
         public Party getInvestor() {
             return investor;
+        }
+
+        public String getStatus() {
+            return status;
         }
     }
 
