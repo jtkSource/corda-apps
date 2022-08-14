@@ -402,7 +402,13 @@ public class FlowTests {
         CordaFuture<String> gsCouponFuture = gsNode.startFlow(new CouponPaymentFlow(bond50.getNextCouponDate()));
         network.runNetwork();
         String msg = gsCouponFuture.get();
-        assertEquals("Completed Goldman Sachs Coupon payment for coupon date: " + bond50.getNextCouponDate(), msg);
+        String assertString = String.format("{ " +
+                        "\"issuer\":\"%s\"," +
+                        "\"couponDate\":\"%s\"" +
+                        "}",
+                bond50.getIssuer().getName().getCommonName(),
+                bond50.getNextCouponDate());
+        assertEquals(assertString, msg);
         double coupon1 = 26666.66;
         double coupon2 = 53333.33;
         BigDecimal totalWithCoupon = gsNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("PHP")).get();

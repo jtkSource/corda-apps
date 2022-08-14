@@ -121,7 +121,6 @@ public class TransferTokenFlow {
                         recipient.getName().getCommonName(),
                         amountInBG,
                         stx.getId()));
-
                 return stx;
             }else {
                 throw new FlowException("No Cash State ["+currencyCode+"] available ");

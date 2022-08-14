@@ -204,6 +204,147 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/messageStatusCode'
+  /corda/bond/coupon/payment:
+    post:
+      summary: POST API to pay coupons to various holders of the bond
+      operationId: bond-coupon
+      tags:
+        - corda
+        - bond-coupon
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                couponDate:
+                  type: string
+      responses:
+        '200':
+          description: Response for coupon payment
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+        '500':
+          description: The request has been accepted for processing, but the processing has not been completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/messageStatusCode'
+  /corda/cash/issue:
+    post:
+      summary: POST API to create money in the central bank
+      operationId: issue-cash
+      tags:
+        - corda
+        - issue-cash
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: string
+                currencyCode:
+                  type: string
+                usdRate:
+                  type: number
+      responses:
+        '200':
+          description: Response for Bond Issuance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+        '500':
+          description: The request has been accepted for processing, but the processing has not been completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/messageStatusCode'
+  /corda/cash/query:
+    post:
+      summary: API to query for cash
+      operationId: query-cash
+      tags:
+        - corda
+        - query-cash
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                queryType:
+                  type: string
+                  enum:
+                    - byCurrencyCode
+                queryValue:
+                  type: string
+      responses:
+        '200':
+          description: Response for create Term
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+        '500':
+          description: The request has been accepted for processing, but the processing has not been completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/messageStatusCode'
+  /corda/cash/transfer:
+    post:
+      summary: POST API to transfer money to other parties
+      operationId: transfer-cash
+      tags:
+        - corda
+        - transfer-cash
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: string
+                currencyCode:
+                  type: string
+                recipient:
+                  type: string
+      responses:
+        '200':
+          description: Response for Bond Issuance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+        '500':
+          description: The request has been accepted for processing, but the processing has not been completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/messageStatusCode'
+
 components:
   schemas:
     termRequest:

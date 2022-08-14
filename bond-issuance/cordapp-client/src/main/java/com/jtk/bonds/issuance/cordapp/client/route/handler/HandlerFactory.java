@@ -55,6 +55,15 @@ public class HandlerFactory {
                             .request("CORDA-API",createBT, handleCordaAPI(routingContext));
                 });
         routerBuilder
+                .operation("query-cash")
+                .handler(routingContext -> {
+                    RequestParameters params = routingContext.get("parsedParameters");
+                    JsonObject queryCash = params.body().getJsonObject();
+                    queryCash.put("url","query-cash");
+                    vertx.eventBus()
+                            .request("CORDA-API",queryCash, handleCordaAPI(routingContext));
+                });
+        routerBuilder
                 .operation("issue-bond")
                 .handler(routingContext -> {
                     RequestParameters params = routingContext.get("parsedParameters");
@@ -73,6 +82,32 @@ public class HandlerFactory {
                     vertx.eventBus()
                             .request("CORDA-API",msg, handleCordaAPI(routingContext));
                 });
+        routerBuilder.operation("bond-coupon")
+                .handler(routingContext -> {
+                    RequestParameters params = routingContext.get("parsedParameters");
+                    JsonObject couponsJson = params.body().getJsonObject();
+                    couponsJson.put("url","bond-coupon");
+                    vertx.eventBus()
+                            .request("CORDA-API",couponsJson, handleCordaAPI(routingContext));
+                });
+        routerBuilder.operation("issue-cash")
+                .handler(routingContext -> {
+                    RequestParameters params = routingContext.get("parsedParameters");
+                    JsonObject cashJson = params.body().getJsonObject();
+                    cashJson.put("url","issue-cash");
+                    vertx.eventBus()
+                            .request("CORDA-API",cashJson, handleCordaAPI(routingContext));
+                });
+        routerBuilder.operation("transfer-cash")
+                .handler(routingContext -> {
+                    RequestParameters params = routingContext.get("parsedParameters");
+                    JsonObject cashJson = params.body().getJsonObject();
+                    cashJson.put("url","transfer-cash");
+                    vertx.eventBus()
+                            .request("CORDA-API",cashJson, handleCordaAPI(routingContext));
+                });
+
+
     }
 
     @NotNull

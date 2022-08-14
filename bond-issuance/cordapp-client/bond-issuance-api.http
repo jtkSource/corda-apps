@@ -53,8 +53,8 @@ POST http://{{host}}:{{port}}/corda/bonds/issue
 Content-Type: application/json
 
 {
-  "teamStateLinearID": "a7ffd03a-4ba6-496a-8130-fbea8f779c0e",
-  "unitsOfBonds": 10
+  "teamStateLinearID": "687dca98-2463-4900-b0e8-f9c55ad34b35",
+  "unitsOfBonds": 100
 }
 
 ###
@@ -76,5 +76,54 @@ Content-Type: application/json
 }
 
 ###
-GET http://{{host}}:{{port}}/corda/bonds/tokens/a7ffd03a-4ba6-496a-8130-fbea8f779c0e
+GET http://{{host}}:{{port}}/corda/bonds/tokens/687dca98-2463-4900-b0e8-f9c55ad34b35
 Content-Type: application/json
+
+###
+POST http://{{host}}:{{port}}/corda/cash/issue
+Content-Type: application/json
+
+{
+  "amount": "10000000000",
+  "currencyCode": "USD",
+  "usdRate": 1.0
+}
+
+###
+POST http://{{host}}:{{port}}/corda/cash/query
+Content-Type: application/json
+
+{
+  "queryType": "byCurrencyCode",
+  "queryValue": "USD"
+}
+
+###
+POST http://{{host}}:{{port}}/corda/cash/transfer
+Content-Type: application/json
+
+{
+  "amount": "15000000",
+  "currencyCode": "USD",
+  "recipient": "Goldman Sachs"
+}
+
+###
+POST http://{{host}}:{{port}}/corda/cash/transfer
+Content-Type: application/json
+
+{
+  "amount": "2000000",
+  "currencyCode": "USD",
+  "recipient": "Citi Bank"
+}
+
+###
+POST http://{{host}}:{{port}}/corda/cash/transfer
+Content-Type: application/json
+
+{
+  "amount": "3000000",
+  "currencyCode": "USD",
+  "recipient": "HSBC"
+}

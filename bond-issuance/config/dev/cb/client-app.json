@@ -1,6 +1,6 @@
 {
-  "http.server.port": 9090,
-  "welcome.message": "Hello from Node SGX!!",
+  "http.server.port": 9096,
+  "welcome.message": "Hello from Node Central Bank!!",
   "vertx.worker.executetime.ms": 3000,
   "vertx.worker.pool.size": 5,
   "vertx.OpenAPIVerticle.instances": 1,

@@ -1,7 +1,11 @@
 package com.jtk.bonds.issuance.cordapp.client.verticle;
 
 import com.jtk.bonds.issuance.cordapp.client.utils.NodeRPCConnection;
+import com.jtk.corda.workflows.bond.coupons.CouponPaymentFlow;
 import com.jtk.corda.workflows.bond.issuance.*;
+import com.jtk.corda.workflows.cash.issuance.CreateCashFlow;
+import com.jtk.corda.workflows.cash.issuance.QueryCashTokenFlow;
+import com.jtk.corda.workflows.cash.issuance.TransferTokenFlow;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -11,10 +15,13 @@ import io.vertx.core.json.JsonObject;
 import net.corda.core.contracts.ContractState;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.CordaX500Name;
+import net.corda.core.identity.Party;
 import net.corda.core.node.NodeInfo;
+import net.corda.core.transactions.SignedTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -165,6 +172,82 @@ public class CordaVerticle extends AbstractVerticle {
                                     return;
                                 }
                                 break;
+                            case "bond-coupon":
+                                try {
+                                    String returnMsg = nodeRPC.proxy().startTrackedFlowDynamic(CouponPaymentFlow.class,
+                                                    json.getString("couponDate"))
+                                            .getReturnValue().get();
+                                    String response = returnMsg;
+                                    responseJson.put("msg", response);
+                                }catch (InterruptedException e) {
+                                    log.error("Exception query Corda", e);
+                                    e1.fail(e);
+                                    return;
+                                } catch (ExecutionException e) {
+                                    log.error("Exception query Corda", e);
+                                    e1.fail(e);
+                                    return;
+                                }
+                                break;
+                            case "issue-cash":
+                                try {
+                                    String returnMsg = nodeRPC.proxy().startTrackedFlowDynamic(CreateCashFlow.class,
+                                                    json.getString("amount"),
+                                                    json.getString("currencyCode"),
+                                                    json.getDouble("usdRate")
+                                            )
+                                            .getReturnValue().get();
+                                    String response = returnMsg.split(">")[1];
+                                    responseJson.put("msg", response);
+                                }catch (InterruptedException e) {
+                                    log.error("Exception query Corda", e);
+                                    e1.fail(e);
+                                    return;
+                                } catch (ExecutionException e) {
+                                    log.error("Exception query Corda", e);
+                                    e1.fail(e);
+                                    return;
+                                }
+                                break;
+                            case "transfer-cash":
+                                try {
+                                    String recipient = json.getString("recipient");
+                                    log.info("Recipient: [{}] ",recipient);
+
+                                    Party partyRecipient = nodeRPC.proxy().networkMapSnapshot().stream()
+                                            .filter(el -> !isNotary(el) && !isMe(el) && !isNetworkMap(el))
+                                            .flatMap(el -> el.getLegalIdentities().stream())
+                                            .filter(party -> {
+                                                log.info("Party: [{}] ",party.getName().getCommonName());
+                                                return party.getName().getCommonName().equals(recipient);
+                                            })
+                                            .findAny().orElse(null);
+                                    String response = String.format("{\"msg\":\"%s not found\"}",recipient);
+
+                                    if(partyRecipient != null){
+                                        SignedTransaction returnMsg = nodeRPC.proxy().startTrackedFlowDynamic(TransferTokenFlow.TransferTokenInitiator.class,
+                                                        json.getString("amount"),
+                                                        json.getString("currencyCode"),
+                                                        partyRecipient
+                                                )
+                                                .getReturnValue().get();
+                                        response = String.format("{\"transactionId\":\"%s\"}",returnMsg.getId().toHexString());
+                                    }
+                                    responseJson.put("msg", response);
+
+                                }catch (InterruptedException e) {
+                                    log.error("Exception query Corda", e);
+                                    e1.fail(e);
+                                    return;
+                                } catch (ExecutionException e) {
+                                    log.error("Exception query Corda", e);
+                                    e1.fail(e);
+                                    return;
+                                }
+                                break;
+                            case "query-cash":
+                                queryCash(json, responseJson);
+                                break;
                             default:
                                 responseJson.put("msg", "API NOT-FOUND");
                                 break;
@@ -178,6 +261,25 @@ public class CordaVerticle extends AbstractVerticle {
                             event.fail(500, "Couldnt successfully process request...");
                         }
                     });
+        }
+
+        private void queryCash(JsonObject json, JsonObject responseJson) {
+            String qType = json.getString("queryType");
+            String jsonResponse = "";
+            if (qType.equalsIgnoreCase("byCurrencyCode")) {
+                String currency = json.getString("queryValue");
+                try {
+                    BigDecimal amount = nodeRPC.proxy().
+                            startTrackedFlowDynamic(QueryCashTokenFlow.GetTokenBalance.class, currency)
+                            .getReturnValue().get();
+                    jsonResponse = String.format("{\"total\":\"%s\"}", amount.toPlainString());
+                } catch (InterruptedException e) {
+                    log.error("Exception query Corda", e);
+                } catch (ExecutionException e) {
+                    log.error("Exception query Corda", e);
+                }
+                responseJson.put("msg", jsonResponse);
+            }
         }
 
         private void queryBondTerms(JsonObject json, JsonObject responseJson) {
