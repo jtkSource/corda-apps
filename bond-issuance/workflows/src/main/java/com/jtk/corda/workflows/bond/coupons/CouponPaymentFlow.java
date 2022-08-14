@@ -103,7 +103,6 @@ public class CouponPaymentFlow extends FlowLogic<String> {
                 log.info("BondState has been updated with nextCouponDate:{},couponPaymentLeft:{}  after coupon payment TxID: {}",
                         nCouponDate,
                         couponPaymentLeft,
-                        newBondState.getLinearId(),
                         txId.getId());
                 SignedTransaction finalTx = subFlow(new FinalityFlow(txId, ImmutableList.of(bondHolderSession)));
 
