@@ -81,9 +81,7 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
                     }
                     return it;
                 });
-
-        BondRequestNotification brnRes = new BondRequestNotification(brn.investor, brn.units,"OK");
-        investorSession.send(brnRes);
+        investorSession.send(new BondRequestNotification(brn.investor, brn.units,"OK"));
 
         log.info("Received Request to create {} BondStates",brn.units);
         int newAvailableUnits = investorTermState.getUnitsAvailable() - brn.units;
