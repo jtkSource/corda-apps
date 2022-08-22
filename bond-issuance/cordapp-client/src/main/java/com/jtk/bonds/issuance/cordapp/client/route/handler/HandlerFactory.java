@@ -106,6 +106,14 @@ public class HandlerFactory {
                     vertx.eventBus()
                             .request("CORDA-API",cashJson, handleCordaAPI(routingContext));
                 });
+        routerBuilder.operation("bond-coupon-schedule")
+                .handler(routingContext -> {
+                    RequestParameters params = routingContext.get("parsedParameters");
+                    JsonObject cashJson = params.body().getJsonObject();
+                    cashJson.put("url","bond-coupon-schedule");
+                    vertx.eventBus()
+                            .request("CORDA-API",cashJson, handleCordaAPI(routingContext));
+                });
 
 
     }

@@ -127,3 +127,19 @@ Content-Type: application/json
   "currencyCode": "USD",
   "recipient": "HSBC"
 }
+
+###
+POST http://{{host}}:{{port}}/corda/bond/coupon/schedule
+Content-Type: application/json
+
+{
+  "schedulePeriodInSeconds": 30
+}
+
+###
+POST http://{{host}}:{{port}}/corda/bond/coupon/payment
+Content-Type: application/json
+
+{
+  "couponDate": "20230210"
+}

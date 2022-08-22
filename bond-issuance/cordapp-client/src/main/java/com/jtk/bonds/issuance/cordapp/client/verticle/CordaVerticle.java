@@ -2,6 +2,7 @@ package com.jtk.bonds.issuance.cordapp.client.verticle;
 
 import com.jtk.bonds.issuance.cordapp.client.utils.NodeRPCConnection;
 import com.jtk.corda.workflows.bond.coupons.CouponPaymentFlow;
+import com.jtk.corda.workflows.bond.coupons.StartCouponPaymentFlow;
 import com.jtk.corda.workflows.bond.issuance.*;
 import com.jtk.corda.workflows.cash.issuance.CreateCashFlow;
 import com.jtk.corda.workflows.cash.issuance.QueryCashTokenFlow;
@@ -247,6 +248,23 @@ public class CordaVerticle extends AbstractVerticle {
                                 break;
                             case "query-cash":
                                 queryCash(json, responseJson);
+                                break;
+                            case "bond-coupon-schedule":
+                                try {
+                                    Void rt = nodeRPC.proxy().startTrackedFlowDynamic(StartCouponPaymentFlow.class,
+                                                    json.getInteger("schedulePeriodInSeconds"))
+                                            .getReturnValue().get();
+                                    String response = String.format("{\"msg\":\"coupon schedule started\"}");
+                                    responseJson.put("msg", response);
+                                }catch (InterruptedException e) {
+                                    log.error("Exception query Corda", e);
+                                    e1.fail(e);
+                                    return;
+                                } catch (ExecutionException e) {
+                                    log.error("Exception query Corda", e);
+                                    e1.fail(e);
+                                    return;
+                                }
                                 break;
                             default:
                                 responseJson.put("msg", "API NOT-FOUND");

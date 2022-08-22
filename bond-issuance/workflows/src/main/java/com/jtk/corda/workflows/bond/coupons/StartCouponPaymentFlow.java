@@ -15,8 +15,7 @@ import java.util.Collections;
 
 import static com.jtk.corda.contracts.bond.coupons.CouponPaymentContract.Commands.*;
 
-@InitiatingFlow
-@StartableByRPC
+// TBD
 public class StartCouponPaymentFlow extends FlowLogic<Void> {
     private static final Logger log = LoggerFactory.getLogger(StartCouponPaymentFlow.class);
     private final ProgressTracker progressTracker = tracker();
@@ -45,7 +44,6 @@ public class StartCouponPaymentFlow extends FlowLogic<Void> {
     }
 
     @Override
-    @Suspendable
     public Void call() throws FlowException {
         log.info("Start Coupon Payment every {} seconds", this.schedulePeriodInSeconds);
         progressTracker.setCurrentStep(GENERATING_TRANSACTION);

@@ -129,6 +129,23 @@ GET http://{{host}}:{{port}}/corda/bonds/tokens/{{termId}}
 Content-Type: application/json
 ```
 
+#### Bond Coupon API
+
+- (TBD) Start the coupon schedule on the node
+```http request
+POST http://{{host}}:{{port}}/corda/bond/coupon/schedule
+Content-Type: application/json
+
+{
+  "schedulePeriodInSeconds": 30
+}
+```
+
+- Manually pay coupon
+
+```http request
+
+```
 ### Cash API
 
 - **Issue cash**
@@ -176,4 +193,23 @@ Content-Type: application/json
   "recipient": "Goldman Sachs"
 }
 
+```
+
+
+```json
+[{
+  "GS": {
+    "total": "15230000" //14780000
+  }
+},
+{
+  "HSBC":  {
+  "total": "2825000.0" //3275000.0
+  }
+},
+{
+"CITI": {
+  "total": "1945000.0" //1945000
+  }
+}]
 ```
