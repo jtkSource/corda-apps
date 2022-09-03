@@ -32,16 +32,13 @@ public class CouponPaymentResponderFlow extends FlowLogic<SignedTransaction> {
     public SignedTransaction call() throws FlowException {
         Party bondHolder = getOurIdentity();
         Party bondIssuer = bondHolderSession.getCounterparty();
-        List<StateAndRef<BondState>> holderSessionBondState = subFlow(new ReceiveStateAndRefFlow<>(bondHolderSession));
-        if(holderSessionBondState.size()!=1){
-            throw new FlowException("Only one bondstate expected");
-        }
-        UniqueIdentifier bondUniqueLinearId = holderSessionBondState.get(0).getState().getData().getLinearId();
-
         CouponPaymentFlow.CouponPaymentNotification couponPaymentNotification =
                 bondHolderSession.receive(CouponPaymentFlow.CouponPaymentNotification.class).unwrap(it -> it);
-        Long bondTokens = subFlow(new QueryBondToken.GetTokenBalance(bondUniqueLinearId.toString()));
-        bondHolderSession.send(new CouponPaymentFlow.CouponPaymentNotification(couponPaymentNotification.getIssuer(), bondTokens,"OK"));
+        Long bondTokens = subFlow(new QueryBondToken.GetTokenBalance(couponPaymentNotification.getBondLinearID()));
+        bondHolderSession.send(new CouponPaymentFlow.CouponPaymentNotification(couponPaymentNotification.getIssuer(),
+                bondTokens,
+                "OK",
+                couponPaymentNotification.getBondLinearID()));
         return subFlow(new ReceiveFinalityFlow(bondHolderSession));
     }
 }

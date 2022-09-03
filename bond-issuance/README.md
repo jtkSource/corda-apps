@@ -17,5 +17,4 @@ start GetBondByCurrency SGD
 
 ```
 - request will generate a BondState which has a copy of the terms and is shared by the Issuer and Investor
-- Once all the bonds are sold, the issuer can start giving coupon paymetns
-- 
+- Once all the bonds are sold, the issuer can start giving coupon payments

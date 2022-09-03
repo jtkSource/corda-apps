@@ -9,8 +9,16 @@ import com.jtk.corda.workflows.utils.CustomQuery;
 import com.jtk.corda.workflows.utils.Utility;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.UpdateEvolvableToken;
 import net.corda.core.contracts.StateAndRef;
-import net.corda.core.flows.*;
+import net.corda.core.contracts.StateRef;
+import net.corda.core.flows.FinalityFlow;
+import net.corda.core.flows.FlowException;
+import net.corda.core.flows.FlowLogic;
+import net.corda.core.flows.FlowSession;
+import net.corda.core.flows.InitiatingFlow;
+import net.corda.core.flows.SchedulableFlow;
+import net.corda.core.flows.StartableByRPC;
 import net.corda.core.identity.Party;
+import net.corda.core.serialization.ConstructorForDeserialization;
 import net.corda.core.serialization.CordaSerializable;
 import net.corda.core.transactions.SignedTransaction;
 import org.slf4j.Logger;
@@ -54,10 +62,9 @@ public class CouponPaymentFlow extends FlowLogic<String> {
                 int parValue = bs.getParValue();
                 FlowSession bondHolderSession = initiateFlow(holder);
                 StateAndRef<BondState> oldBondStateAndRef = CustomQuery.queryBondByLinearID(bs.getLinearId(), getServiceHub());
-                subFlow(new SendStateAndRefFlow(bondHolderSession, ImmutableList.of(oldBondStateAndRef)));
-
+                String bondLinearId = oldBondStateAndRef.getState().getData().getLinearId().toString();
                 CouponPaymentNotification couponPaymentNotification =
-                        new CouponPaymentNotification(me, 0L, "PENDING");
+                        new CouponPaymentNotification(me, 0L, "PENDING", bondLinearId);
                 Long numberOfTokens = bondHolderSession.sendAndReceive(CouponPaymentNotification.class, couponPaymentNotification)
                         .unwrap(data -> {
                             if (data.status.equals("OK")) {
@@ -66,7 +73,7 @@ public class CouponPaymentFlow extends FlowLogic<String> {
                                 return null;
                             }
                         });
-                if(numberOfTokens == null){
+                if(numberOfTokens == null){ // check if number of tokens match ?
                     throw new FlowException("Something went wrong with Coupon payment");
                 }
 
@@ -127,12 +134,17 @@ public class CouponPaymentFlow extends FlowLogic<String> {
         private final Long numberOfTokens;
         private final String status;
 
+        private final String bondLinearID;
+
+        @ConstructorForDeserialization
         public CouponPaymentNotification(Party issuer,
                                          Long numberOfTokens,
-                                         String status) {
+                                         String status,
+                                         String bondLinearID) {
             this.issuer = issuer;
             this.numberOfTokens = numberOfTokens;
             this.status = status;
+            this.bondLinearID = bondLinearID;
         }
 
         public Party getIssuer() {
@@ -141,6 +153,10 @@ public class CouponPaymentFlow extends FlowLogic<String> {
 
         public Long getNumberOfTokens() {
             return numberOfTokens;
+        }
+
+        public String getBondLinearID() {
+            return bondLinearID;
         }
 
         public String getStatus() {

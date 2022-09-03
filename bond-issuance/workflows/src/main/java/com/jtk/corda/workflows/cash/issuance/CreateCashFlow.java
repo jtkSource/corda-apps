@@ -17,7 +17,6 @@ import net.corda.core.flows.FlowLogic;
 import net.corda.core.flows.InitiatingFlow;
 import net.corda.core.flows.StartableByRPC;
 import net.corda.core.identity.Party;
-import net.corda.core.node.services.IdentityService;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.utilities.ProgressTracker;
 import org.slf4j.Logger;
@@ -80,11 +79,6 @@ public class CreateCashFlow extends FlowLogic<String> {
         }
         progressTracker.setCurrentStep(IDENTIFY_OBSERVERS);
         List<Party> observers = Utility.getLegalIdentitiesByOU(getServiceHub().getIdentityService(), "Observer");
-        IdentityService identityService = getServiceHub().getIdentityService();
-        List<Party> otherBanks = Utility.getLegalIdentitiesByOU(identityService, "Bank")
-                .stream()
-                .collect(Collectors.toList());
-        observers.addAll(otherBanks);
         log.info("Observers {}", observers.stream().map(party -> party.getName().getCommonName()).collect(Collectors.toList()));
         if (observers.size() == 0) {
             throw new FlowException("Cannot issue money without observers");
@@ -109,13 +103,14 @@ public class CreateCashFlow extends FlowLogic<String> {
             cashState = new CashState(currencyCode, usdRate, me, new UniqueIdentifier());
             TransactionState<CashState> transactionState = new TransactionState<>(cashState, notary);
             subFlow(new CreateEvolvableTokens(transactionState, observers));
+            fungibleCashTokens = new FungibleTokenBuilder()
+                    .ofTokenType(cashState.toPointer())
+                    .issuedBy(me)
+                    .heldBy(me)
+                    .withAmount(amountInBG)
+                    .buildFungibleToken();
         }
-        fungibleCashTokens = new FungibleTokenBuilder()
-                .ofTokenType(cashState.toPointer())
-                .issuedBy(me)
-                .heldBy(me)
-                .withAmount(amountInBG)
-                .buildFungibleToken();
+
         progressTracker.setCurrentStep(ISSUE_TOKENS);
         SignedTransaction stx = subFlow(new IssueTokens(ImmutableList.of(fungibleCashTokens), observers));
         progressTracker.setCurrentStep(DONE);

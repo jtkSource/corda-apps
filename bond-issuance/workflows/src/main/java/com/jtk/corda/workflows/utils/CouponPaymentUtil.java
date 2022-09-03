@@ -16,12 +16,12 @@ public class CouponPaymentUtil {
         long daysInBetween = ChronoUnit.DAYS.between(issueDate, maturityDate);
         long months = daysInBetween / daysPerMonth;
         long numberOfPayments = (months / paymentFrequency);
-        log.info("{} Days per month, Total months: {}, Coupon Payment Left ",daysPerMonth, months, numberOfPayments);
+        log.info("{} Days per month, Total months: {}, Coupon Payment Left {}",daysPerMonth, months, numberOfPayments);
         return numberOfPayments;
     }
 
     public static LocalDate getNextCouponPaymentDate(LocalDate fromDate, int daysPerMonth, int paymentFrequency){
-        return fromDate.plusDays(daysPerMonth*paymentFrequency);
+        return fromDate.plusDays(daysPerMonth * paymentFrequency);
     }
 
 }

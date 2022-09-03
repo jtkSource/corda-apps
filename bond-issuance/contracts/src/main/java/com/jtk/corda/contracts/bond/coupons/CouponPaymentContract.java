@@ -12,6 +12,6 @@ public class CouponPaymentContract implements Contract {
 
     }
     public interface Commands extends CommandData {
-        class CheckForPayments implements Commands {}
+        class PayCoupons implements Commands {}
     }
 }

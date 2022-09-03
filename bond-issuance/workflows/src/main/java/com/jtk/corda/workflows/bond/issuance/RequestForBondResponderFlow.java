@@ -133,6 +133,10 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
                 (newTermState.getPaymentFrequencyInMonths(), 30, mDate, now);
         LocalDate nextCouponDate = CouponPaymentUtil.getNextCouponPaymentDate
                 (now,30, newTermState.getPaymentFrequencyInMonths());
+
+        // In order to demo coupon payment first coupon is always on the same date
+        nextCouponDate = LocalDate.now();
+
         String issueDate = dateFormatter.format(now);
         String nCouponDate = dateFormatter.format(nextCouponDate);
 

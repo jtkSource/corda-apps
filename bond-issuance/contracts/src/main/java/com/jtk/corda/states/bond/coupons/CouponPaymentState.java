@@ -56,7 +56,6 @@ public class CouponPaymentState implements SchedulableState {
     public ScheduledActivity nextScheduledActivity(StateRef thisStateRef, FlowLogicRefFactory flowLogicRefFactory) {
         log.info("");
         return new ScheduledActivity(flowLogicRefFactory.
-                create("com.jtk.corda.workflows.bond.coupons.CouponPaymentFlow", thisStateRef),
-                     nextActivityTime);
+                create("com.jtk.corda.workflows.bond.coupons.CouponPaymentFlow", thisStateRef), nextActivityTime);
     }
 }

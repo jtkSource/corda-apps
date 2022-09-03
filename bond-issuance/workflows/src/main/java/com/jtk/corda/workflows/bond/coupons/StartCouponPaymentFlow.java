@@ -1,10 +1,12 @@
 package com.jtk.corda.workflows.bond.coupons;
 
-import co.paralleluniverse.fibers.Suspendable;
 import com.jtk.corda.contracts.bond.coupons.CouponPaymentContract;
+import static com.jtk.corda.contracts.bond.coupons.CouponPaymentContract.Commands.PayCoupons;
 import com.jtk.corda.states.bond.coupons.CouponPaymentState;
 import net.corda.core.contracts.CommandData;
-import net.corda.core.flows.*;
+import net.corda.core.flows.FinalityFlow;
+import net.corda.core.flows.FlowException;
+import net.corda.core.flows.FlowLogic;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
@@ -13,9 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 
-import static com.jtk.corda.contracts.bond.coupons.CouponPaymentContract.Commands.*;
-
-// TBD
+// Not working for some reason!!
 public class StartCouponPaymentFlow extends FlowLogic<Void> {
     private static final Logger log = LoggerFactory.getLogger(StartCouponPaymentFlow.class);
     private final ProgressTracker progressTracker = tracker();
@@ -48,7 +48,7 @@ public class StartCouponPaymentFlow extends FlowLogic<Void> {
         log.info("Start Coupon Payment every {} seconds", this.schedulePeriodInSeconds);
         progressTracker.setCurrentStep(GENERATING_TRANSACTION);
         CouponPaymentState couponPaymentState = new CouponPaymentState(getOurIdentity(), this.schedulePeriodInSeconds);
-        CommandData cmd = new CheckForPayments();
+        CommandData cmd = new PayCoupons();
         TransactionBuilder txBuilder = new TransactionBuilder(getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0))
                 .addOutputState(couponPaymentState, CouponPaymentContract.contractID)
                 .addCommand(cmd, getOurIdentity().getOwningKey());

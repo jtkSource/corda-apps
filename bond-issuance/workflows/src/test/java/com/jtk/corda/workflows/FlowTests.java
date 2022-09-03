@@ -3,6 +3,7 @@ package com.jtk.corda.workflows;
 import com.google.common.collect.ImmutableList;
 import com.jtk.corda.states.bond.issuance.BondState;
 import com.jtk.corda.workflows.bond.coupons.CouponPaymentFlow;
+import com.jtk.corda.workflows.bond.coupons.StartCouponPaymentFlow;
 import com.jtk.corda.workflows.bond.issuance.CreateAndIssueTermFlow;
 import com.jtk.corda.workflows.bond.issuance.QueryBondTermsFlow;
 import com.jtk.corda.workflows.bond.issuance.QueryBondsFlow;
@@ -27,6 +28,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -116,6 +118,8 @@ public class FlowTests {
         network.runNetwork();
         cbNode.startFlow(new CreateCashFlow("10000000000","PHP",55.72));
         network.runNetwork();
+        cbNode.startFlow(new CreateCashFlow("10000000000","ARS",55.72));
+        network.runNetwork();
 
         CordaFuture<String> future = gsNode.startFlow(new CreateAndIssueTermFlow("RFB-GS-TEST1",3.2,1000,
                 1000,"20270806", "CB", "USD", "AAA",2));
@@ -176,8 +180,7 @@ public class FlowTests {
         String termLinearId = json.getString("linearId");
 
         // Request for Bond Issue
-        CordaFuture<String> future1 = hsbcNode.startFlow(new RequestForBondInitiatorFlow
-                (UniqueIdentifier.Companion.fromString(termLinearId), 50));
+        CordaFuture<String> future1 = hsbcNode.startFlow(new RequestForBondInitiatorFlow(UniqueIdentifier.Companion.fromString(termLinearId), 50));
         network.runNetwork();
         String jsonToken = future1.get();
         json = (JSONObject) new JSONTokener(jsonToken).nextValue();
@@ -432,6 +435,31 @@ public class FlowTests {
                 .format(locateDateformat);
         assertNotEquals(nnCouponDate, bond100.getNextCouponDate());
 
+    }
+
+    @Ignore
+    @Test
+    public void testScheduledCouponPayments() throws ExecutionException, InterruptedException {
+        cbNode.startFlow(new TransferTokenFlow.TransferTokenInitiator("2000000", "ARS", hsbcParty));
+        network.runNetwork();
+        // Create Term
+        CordaFuture<String> future = gsNode.startFlow(new CreateAndIssueTermFlow("Evita-GS-TEST-BOND",
+                3.2, 1000, 1000, "20270806",
+                "CB", "ARS", "AAA",2));
+        network.runNetwork();
+
+            String response = future.get().split(">")[1];
+        JSONObject json = (JSONObject) new JSONTokener(response).nextValue();
+        String termLinearId = json.getString("linearId");
+
+        // Request for Bond Issue
+        CordaFuture<String> future1 = hsbcNode.startFlow(new RequestForBondInitiatorFlow(UniqueIdentifier.Companion.fromString(termLinearId), 50));
+        network.runNetwork();
+
+        gsNode.startFlow(new StartCouponPaymentFlow(10));
+        network.runNetwork();
+
+        log.info("Starting scheduled payment...");
 
     }
 }
