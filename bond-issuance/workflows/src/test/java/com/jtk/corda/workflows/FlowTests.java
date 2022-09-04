@@ -191,15 +191,15 @@ public class FlowTests {
         assertEquals("Goldman Sachs",json.getString("issuer"));
         assertEquals("HSBC",json.getString("holder"));
         String identifier = json.getString("tokenIdentifier");
+        assertEquals(termLinearId, identifier);
 
-        String bondStateJson = hsbcNode.startFlow(new QueryBondsFlow.GetBondByTermStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId)))
-                .get();
+        String bondStateJson = hsbcNode.startFlow(new QueryBondsFlow.
+                        GetBondByTermStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId))).get();
         JSONArray jsonArray = (JSONArray) new JSONTokener(bondStateJson).nextValue();
         log.info("Bond States JSON {}", jsonArray);
         json = jsonArray.getJSONObject(0);
         assertEquals("RFB-GS-TEST-BOND",json.getString("bondName"));
         assertEquals(termLinearId, json.getString("termStateLinearID"));
-        assertEquals(identifier,json.getString("linearId"));
 
         BigDecimal total = gsNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("GBP")).get();
         assertEquals(0, new BigDecimal("50000.00").compareTo(total)); // because the fractionDigits is 2 for currencies
@@ -369,7 +369,7 @@ public class FlowTests {
         network.runNetwork();
         String jsonToken = future1.get();
         json = (JSONObject) new JSONTokener(jsonToken).nextValue();
-        String bondTokenId_50 = json.getString("tokenIdentifier");
+        String bondTokenId_50 = json.getString("bondIdentifier");
         BondState bond50 = CustomQuery.queryBondByLinearID(UniqueIdentifier.Companion.fromString(bondTokenId_50), gsNode.getServices())
                 .getState().getData();
         long couponLeftForBond50 = bond50.getCouponPaymentLeft();
@@ -386,13 +386,12 @@ public class FlowTests {
         network.runNetwork();
         jsonToken = future1.get();
         json = (JSONObject) new JSONTokener(jsonToken).nextValue();
-        String bondTokenId_100 = json.getString("tokenIdentifier");
-        assertNotEquals(bondTokenId_50, bondTokenId_100);
+        String bondTokenId_100 = json.getString("bondIdentifier");
+        assertEquals(bondTokenId_50, bondTokenId_100);
         BondState bond100 = CustomQuery.queryBondByLinearID(UniqueIdentifier.Companion.fromString(bondTokenId_100), gsNode.getServices())
                 .getState().getData();
         long couponLeftForBond100 = bond100.getCouponPaymentLeft();
         String nextCouponDateForBond100 = bond100.getNextCouponDate();
-
         assertEquals(bond50.getNextCouponDate(), bond100.getNextCouponDate());
 
         amountGS = amountGS + (100 * 1000);
@@ -412,12 +411,11 @@ public class FlowTests {
                 bond50.getIssuer().getName().getCommonName(),
                 bond50.getNextCouponDate());
         assertEquals(assertString, msg);
-        double coupon1 = 26666.66;
-        double coupon2 = 53333.33;
+        double coupon1 = 80000.0;
         BigDecimal totalWithCoupon = gsNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("PHP")).get();
-        assertEquals(totalGsAmount.doubleValue() - (coupon1 + coupon2), totalWithCoupon.doubleValue(), 0.01); // because the fractionDigits is 2 for currencies
+        assertEquals(totalGsAmount.doubleValue() - (coupon1 ), totalWithCoupon.doubleValue(), 0.01); // because the fractionDigits is 2 for currencies
         totalWithCoupon = hsbcNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("PHP")).get();
-        assertEquals(totalHSBCAmount.doubleValue() + (coupon1 + coupon2), totalWithCoupon.doubleValue(),0.01); // because the fractionDigits is 2 for currencies
+        assertEquals(totalHSBCAmount.doubleValue() + (coupon1 ), totalWithCoupon.doubleValue(),0.01); // because the fractionDigits is 2 for currencies
 
         // check Bond States // coupon date and coupon left
         bond50 = CustomQuery.queryBondByLinearID(UniqueIdentifier.Companion.fromString(bondTokenId_50), gsNode.getServices())
@@ -427,15 +425,9 @@ public class FlowTests {
                 .plusMonths(bond50.getPaymentFrequencyInMonths())
                 .format(locateDateformat);
         assertNotEquals(nnCouponDate, bond50.getNextCouponDate());
-        bond100 = CustomQuery.queryBondByLinearID(UniqueIdentifier.Companion.fromString(bondTokenId_100), gsNode.getServices())
-                .getState().getData();
-        assertEquals(couponLeftForBond100-1, bond100.getCouponPaymentLeft());
-        nnCouponDate = LocalDate.parse(nextCouponDateForBond100, locateDateformat)
-                .plusMonths(bond100.getPaymentFrequencyInMonths())
-                .format(locateDateformat);
-        assertNotEquals(nnCouponDate, bond100.getNextCouponDate());
-
     }
+
+
 
     @Ignore
     @Test

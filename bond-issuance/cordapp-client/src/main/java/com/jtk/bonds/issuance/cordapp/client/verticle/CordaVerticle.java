@@ -158,7 +158,7 @@ public class CordaVerticle extends AbstractVerticle {
                                 log.info("tokens for bonds on termId {}", termId);
                                 try {
                                     Long amount = nodeRPC.proxy()
-                                            .startTrackedFlowDynamic(QueryBondToken.GetTokenSum.class, termId)
+                                            .startTrackedFlowDynamic(QueryBondToken.GetTokenBalance.class, termId)
                                             .getReturnValue()
                                             .get();
                                     log.info("Retrieved sum: {} ", amount);

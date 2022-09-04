@@ -8,7 +8,6 @@ import com.jtk.corda.states.bond.issuance.TermState;
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
 import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType;
 import net.corda.core.contracts.Amount;
-import net.corda.core.contracts.ContractState;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.FlowException;
@@ -20,11 +19,13 @@ import net.corda.core.flows.SendStateAndRefFlow;
 import net.corda.core.flows.StartableByRPC;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
-import net.corda.core.utilities.UntrustworthyData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+
 
 @InitiatingFlow
 @StartableByRPC
@@ -43,7 +44,7 @@ public class RequestForBondInitiatorFlow extends FlowLogic<String> {
     public String call() throws FlowException {
 
         Party investorParty = getOurIdentity();
-        if (!investorParty.getName().getOrganisationUnit().equals("Bank")) {
+        if (!Objects.equals(investorParty.getName().getOrganisationUnit(), "Bank")) {
             log.error("The flow is not invoked by a bank");
             throw new FlowException("Flow can be invoked by OU=Bank only");
         }
@@ -51,7 +52,6 @@ public class RequestForBondInitiatorFlow extends FlowLogic<String> {
         //find term based on linearID and see if the requested amount is available
         StateAndRef<TermState> termStateAndRef = CustomQuery.queryTermsByTermStateLinearID
                 (teamStateLinearID, getServiceHub());
-
         if (termStateAndRef != null) {
             log.info("Term: {} is present ", teamStateLinearID);
             TermState termState = termStateAndRef.getState()
@@ -66,8 +66,7 @@ public class RequestForBondInitiatorFlow extends FlowLogic<String> {
             }
 
             RequestForBondResponderFlow.BondRequestNotification bondRequestNotification =
-                    new RequestForBondResponderFlow.BondRequestNotification(getOurIdentity(), unitsOfBonds,"PENDING");
-
+                    new RequestForBondResponderFlow.BondRequestNotification(getOurIdentity(), unitsOfBonds, "PENDING", "");
             // We start by initiating a flow session with the counterparty. We
             // will use this session to send and receive messages from the
             // counterparty.
@@ -77,55 +76,54 @@ public class RequestForBondInitiatorFlow extends FlowLogic<String> {
             // first send the TermState held by the investor
             subFlow(new SendStateAndRefFlow(termIssuerSession, ImmutableList.of(termStateAndRef)));
             // then send the bond request notification
-            UntrustworthyData<RequestForBondResponderFlow.BondRequestNotification> counterPartyData =
-                    termIssuerSession.sendAndReceive(RequestForBondResponderFlow.BondRequestNotification.class, bondRequestNotification);
-
-            Boolean successfullySendCash = counterPartyData.unwrap(data -> {
-                if (data.getStatus().equalsIgnoreCase("OK")) {
-                    try {
-                        log.info("Counterparty accepted BondRequest...");
-                        int totalAmount = termState.getParValue() * unitsOfBonds;
-                        log.info("Trying to send {} cash",totalAmount);
-                        SignedTransaction tStxTran = subFlow(new TransferTokenFlow.TransferTokenInitiator(
-                                String.valueOf(totalAmount),
-                                termState.getCurrency(),
-                                termState.getIssuer()));
-                        log.info("TransactionID:{} for tokens to issuer {}", tStxTran.getId(), termState.getIssuer().getName().getCommonName());
-                    }catch (Exception e){
-                        log.error("Couldn't transfer money to counterparty", e);
-                        return false;
-                    }
-                    return true;
-                } else {
-                    log.warn("Counterparty Rejected BondRequest...");
-                    return false;
-                }
-            });
-            if(successfullySendCash){
+            AtomicReference<String> stringAtomicReference = new AtomicReference<>("");
+            Boolean successfullySendCash =
+                    termIssuerSession
+                            .sendAndReceive(RequestForBondResponderFlow.BondRequestNotification.class, bondRequestNotification)
+                            .unwrap(data -> {
+                                if (data.getStatus().equalsIgnoreCase("OK")) {
+                                    stringAtomicReference.set(data.getBondLinearId());
+                                    try {
+                                        log.info("Counterparty accepted BondRequest...");
+                                        int totalAmount = termState.getParValue() * unitsOfBonds;
+                                        log.info("Trying to send {} cash", totalAmount);
+                                        SignedTransaction tStxTran =
+                                                subFlow(new TransferTokenFlow.TransferTokenInitiator(String.valueOf(totalAmount), termState.getCurrency(), termState.getIssuer()));
+                                        log.info("TransactionID:{} for tokens to issuer {}", tStxTran.getId(), termState.getIssuer().getName().getCommonName());
+                                    } catch (Exception e) {
+                                        log.error("Couldn't transfer money to counterparty", e);
+                                        return false;
+                                    }
+                                    return true;
+                                } else {
+                                    log.warn("Counterparty Rejected BondRequest...");
+                                    return false;
+                                }
+                            });
+            if (successfullySendCash) {
                 try {
-
                     SignedTransaction finalTx = subFlow(new ReceiveFinalityFlow(termIssuerSession));
-
                     FungibleToken fungibleToken = (FungibleToken) finalTx.getTx().getOutputStates().get(0);
                     Party tokenIssuer = fungibleToken.getIssuer();
                     String issuerCN = tokenIssuer.getName().getCommonName();
-                    Party tokenHolder = (Party)fungibleToken.getHolder();
+                    Party tokenHolder = (Party) fungibleToken.getHolder();
                     String holderCN = tokenHolder.getName().getCommonName();
                     Amount<IssuedTokenType> fungibleTokenAmount = ((FungibleToken) finalTx.getTx().getOutputStates().get(0)).getAmount();
                     String tokenIdentifier = fungibleTokenAmount.getToken().getTokenType().getTokenIdentifier();
                     return "{" +
                             "\"tokenType\": \"FungibleToken\", " +
                             "\"name\": \"BondState\", " +
-                            "\"tokenIdentifier\": \""+tokenIdentifier+"\", " +
-                            "\"issuer\": \""+issuerCN+"\", " +
-                            "\"holder\": \""+holderCN+"\", " +
-                            "\"amount\": "+fungibleTokenAmount.getQuantity()+" " +
+                            "\"tokenIdentifier\": \"" + tokenIdentifier + "\", " +
+                            "\"bondIdentifier\": \"" + stringAtomicReference.get() + "\", " +
+                            "\"issuer\": \"" + issuerCN + "\", " +
+                            "\"holder\": \"" + holderCN + "\", " +
+                            "\"amount\": " + fungibleTokenAmount.getQuantity() + " " +
                             "}";
                 } catch (Exception e) {
                     log.error("Unexpected Exception ", e);
                     throw new IllegalArgumentException("Unexpected Exception in Finalizing the flow");
                 }
-            }else {
+            } else {
                 throw new IllegalArgumentException("Cash couldn't be transferred successfully ");
             }
 

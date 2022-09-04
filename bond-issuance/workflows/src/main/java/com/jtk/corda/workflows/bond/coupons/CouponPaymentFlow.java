@@ -9,7 +9,6 @@ import com.jtk.corda.workflows.utils.CustomQuery;
 import com.jtk.corda.workflows.utils.Utility;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.UpdateEvolvableToken;
 import net.corda.core.contracts.StateAndRef;
-import net.corda.core.contracts.StateRef;
 import net.corda.core.flows.FinalityFlow;
 import net.corda.core.flows.FlowException;
 import net.corda.core.flows.FlowLogic;
@@ -62,9 +61,17 @@ public class CouponPaymentFlow extends FlowLogic<String> {
                 int parValue = bs.getParValue();
                 FlowSession bondHolderSession = initiateFlow(holder);
                 StateAndRef<BondState> oldBondStateAndRef = CustomQuery.queryBondByLinearID(bs.getLinearId(), getServiceHub());
-                String bondLinearId = oldBondStateAndRef.getState().getData().getLinearId().toString();
+                String bondLinearId = oldBondStateAndRef.getState()
+                        .getData()
+                        .getLinearId()
+                        .toString();
                 CouponPaymentNotification couponPaymentNotification =
-                        new CouponPaymentNotification(me, 0L, "PENDING", bondLinearId);
+                        new CouponPaymentNotification(
+                                me,
+                                0L,
+                                "PENDING",
+                                bondLinearId,
+                                bs.getTermStateLinearID().toString());
                 Long numberOfTokens = bondHolderSession.sendAndReceive(CouponPaymentNotification.class, couponPaymentNotification)
                         .unwrap(data -> {
                             if (data.status.equals("OK")) {
@@ -73,20 +80,22 @@ public class CouponPaymentFlow extends FlowLogic<String> {
                                 return null;
                             }
                         });
-                if(numberOfTokens == null){ // check if number of tokens match ?
+                //Long bondTokens = subFlow(new QueryBondToken.GetTokenBalance(couponPaymentNotification.getBondLinearID()));
+                if(numberOfTokens == null){
+                    // check if number of tokens match ?
                     throw new FlowException("Something went wrong with Coupon payment");
                 }
-
                 //Coupon payment = parvalue * (annual coupon rate / number of payments per year)
                 int paymentsPerYear = 12 / bs.getPaymentFrequencyInMonths();
-                double coupon = (parValue * (bs.getInterestRate()/paymentsPerYear)) * numberOfTokens;
+                double coupon = (parValue * (bs.getInterestRate() / paymentsPerYear)) * numberOfTokens;
                 log.info("{}$ Coupon to be send to bond holder", coupon);
-                SignedTransaction tStxTran = subFlow(new TransferTokenFlow.TransferTokenInitiator(
-                        String.valueOf(coupon),
-                        bs.getCurrency(),
-                        bs.getInvestor()));
 
-                log.info("TransactionID:{} for coupons to investor {}", tStxTran.getId(),
+                SignedTransaction tStxTran = subFlow(
+                        new TransferTokenFlow.
+                                TransferTokenInitiator(String.valueOf(coupon), bs.getCurrency(), bs.getInvestor()));
+
+                log.info("TransactionID:{} for coupons to investor {}",
+                        tStxTran.getId(),
                         bs.getInvestor().getName().getCommonName());
 
                 // update bond with the next coupon date
@@ -98,14 +107,15 @@ public class CouponPaymentFlow extends FlowLogic<String> {
                     nCouponDate = "";
                 }
                 long couponPaymentLeft = bs.getCouponPaymentLeft() - 1;
-                BondState newBondState = new BondState(me,bs.getInvestor(), bs.getInterestRate(),bs.getParValue(),
+                BondState newBondState = new BondState(
+                        me, bs.getInvestor(), bs.getInterestRate(),bs.getParValue(),
                         bs.getMaturityDate(), bs.getCreditRating(), couponPaymentLeft,
                         bs.getBondStatus(), bs.getBondType(), bs.getCurrency(),
                         bs.getBondName(), bs.getTermStateLinearID(),bs.getLinearId(),
                         bs.getPaymentFrequencyInMonths(), bs.getIssueDate(), nCouponDate);
 
-                List<Party> bondObservers = new ArrayList<>(Utility.
-                        getLegalIdentitiesByOU(getServiceHub().getIdentityService(), "Observer"));
+                List<Party> bondObservers = new ArrayList<>(Utility.getLegalIdentitiesByOU
+                        (getServiceHub().getIdentityService(), "Observer"));
                 SignedTransaction txId = subFlow(new UpdateEvolvableToken(oldBondStateAndRef, newBondState, bondObservers));
                 log.info("BondState has been updated with nextCouponDate:{},couponPaymentLeft:{}  after coupon payment TxID: {}",
                         nCouponDate,
@@ -135,16 +145,19 @@ public class CouponPaymentFlow extends FlowLogic<String> {
         private final String status;
 
         private final String bondLinearID;
+        private String termLinearId;
 
         @ConstructorForDeserialization
         public CouponPaymentNotification(Party issuer,
                                          Long numberOfTokens,
                                          String status,
-                                         String bondLinearID) {
+                                         String bondLinearID,
+                                         String termLinearId) {
             this.issuer = issuer;
             this.numberOfTokens = numberOfTokens;
             this.status = status;
             this.bondLinearID = bondLinearID;
+            this.termLinearId = termLinearId;
         }
 
         public Party getIssuer() {
@@ -163,5 +176,8 @@ public class CouponPaymentFlow extends FlowLogic<String> {
             return status;
         }
 
+        public String getTermLinearId() {
+            return termLinearId;
+        }
     }
 }

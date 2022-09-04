@@ -2,11 +2,11 @@ package com.jtk.corda.workflows.bond.issuance;
 
 import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.collect.ImmutableList;
-import com.jtk.corda.workflows.utils.CouponPaymentUtil;
-import com.jtk.corda.workflows.utils.CustomQuery;
 import com.jtk.corda.CordaParties;
 import com.jtk.corda.states.bond.issuance.BondState;
 import com.jtk.corda.states.bond.issuance.TermState;
+import com.jtk.corda.workflows.utils.CouponPaymentUtil;
+import com.jtk.corda.workflows.utils.CustomQuery;
 import com.jtk.corda.workflows.utils.Utility;
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.CreateEvolvableTokens;
@@ -86,7 +86,6 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
                     }
                     return it;
                 });
-        investorSession.send(new BondRequestNotification(brn.investor, brn.units,"OK"));
 
         log.info("Received Request to create {} BondStates",brn.units);
         int newAvailableUnits = investorTermState.getUnitsAvailable() - brn.units;
@@ -141,23 +140,35 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
         String nCouponDate = dateFormatter.format(nextCouponDate);
 
         log.info("next coupon payment date: {}", nCouponDate);
-        final BondState bondState = new BondState(
-                bondIssuer,brn.investor,newTermState.getInterestRate(),newTermState.getParValue(),
-                newTermState.getMaturityDate(), newTermState.getCreditRating(), numberOfPayments,
-                newTermState.getBondStatus(), newTermState.getBondType(), newTermState.getCurrency(),
-                newTermState.getBondName(), newTermState.getLinearId(),new UniqueIdentifier(),
-                newTermState.getPaymentFrequencyInMonths(), issueDate, nCouponDate);
 
-        TransactionState<BondState> transactionState = new TransactionState<>(bondState, notary);
+        List<BondState> bondIssuedByMe = CustomQuery
+                .queryBondByTermStateLinearID(newTermState.getLinearId(), getServiceHub())
+                .stream()
+                .filter(bondState -> bondState.getIssuer().equals(bondIssuer))
+                .collect(Collectors.toList());
+
         List<Party> bondObservers = new ArrayList<>();
         bondObservers.addAll(observers);
         bondObservers.add(bondIssuer);
-        subFlow(new CreateEvolvableTokens(transactionState, bondObservers));
+        BondState bondState;
+        if(bondIssuedByMe.size() == 0) {
+            bondState = new BondState(
+                    bondIssuer, brn.investor, newTermState.getInterestRate(), newTermState.getParValue(),
+                    newTermState.getMaturityDate(), newTermState.getCreditRating(), numberOfPayments,
+                    newTermState.getBondStatus(), newTermState.getBondType(), newTermState.getCurrency(),
+                    newTermState.getBondName(), newTermState.getLinearId(), new UniqueIdentifier(),
+                    newTermState.getPaymentFrequencyInMonths(), issueDate, nCouponDate);
+            TransactionState<BondState> transactionState = new TransactionState<>(bondState, notary);
+            subFlow(new CreateEvolvableTokens(transactionState, bondObservers));
+        }else {
+            bondState = bondIssuedByMe.get(0);
+        }
+        investorSession.send(new BondRequestNotification(brn.investor, brn.units,"OK",bondState.getLinearId().toString()));
 
         log.info("Published evolvable tokens for Bond {} ", bondState.getBondName());
 
         FungibleToken bondFungibleToken = new FungibleTokenBuilder()
-                .ofTokenType(bondState.toPointer())
+                .ofTokenType(newTermState.toPointer())
                 .issuedBy(bondIssuer)
                 .heldBy(brn.investor)
                 .withAmount(brn.units)
@@ -174,11 +185,13 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
         private final int units;
 
         private final String status;
+        private String bondLinearId;
 
-        public BondRequestNotification(Party investor, int units, String status) {
+        public BondRequestNotification(Party investor, int units, String status, String bondLinearId) {
             this.investor = investor;
             this.units = units;
             this.status = status;
+            this.bondLinearId = bondLinearId;
         }
         public int getUnits() {
             return units;
@@ -190,6 +203,10 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
 
         public String getStatus() {
             return status;
+        }
+
+        public String getBondLinearId() {
+            return bondLinearId;
         }
     }
 
