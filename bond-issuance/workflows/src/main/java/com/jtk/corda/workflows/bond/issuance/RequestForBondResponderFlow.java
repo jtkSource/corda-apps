@@ -144,7 +144,7 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
         List<BondState> bondIssuedByMe = CustomQuery
                 .queryBondByTermStateLinearID(newTermState.getLinearId(), getServiceHub())
                 .stream()
-                .filter(bondState -> bondState.getIssuer().equals(bondIssuer))
+                .filter(bondState -> bondState.getInvestor().equals(counterparty))
                 .collect(Collectors.toList());
 
         List<Party> bondObservers = new ArrayList<>();
