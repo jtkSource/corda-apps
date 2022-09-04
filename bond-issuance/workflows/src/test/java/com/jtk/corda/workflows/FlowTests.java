@@ -3,30 +3,39 @@ package com.jtk.corda.workflows;
 import com.google.common.collect.ImmutableList;
 import com.jtk.corda.states.bond.issuance.BondState;
 import com.jtk.corda.workflows.bond.coupons.CouponPaymentFlow;
-import com.jtk.corda.workflows.bond.coupons.StartCouponPaymentFlow;
 import com.jtk.corda.workflows.bond.issuance.CreateAndIssueTermFlow;
 import com.jtk.corda.workflows.bond.issuance.QueryBondTermsFlow;
+import com.jtk.corda.workflows.bond.issuance.QueryBondToken;
 import com.jtk.corda.workflows.bond.issuance.QueryBondsFlow;
 import com.jtk.corda.workflows.bond.issuance.RequestForBondInitiatorFlow;
+import com.jtk.corda.workflows.bond.issuance.TransferBondsInitiatorFlow;
 import com.jtk.corda.workflows.cash.issuance.CreateCashFlow;
 import com.jtk.corda.workflows.cash.issuance.QueryCashTokenFlow;
 import com.jtk.corda.workflows.cash.issuance.TransferTokenFlow;
 import com.jtk.corda.workflows.utils.CustomQuery;
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.ContractState;
-import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import net.corda.core.node.NetworkParameters;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.testing.core.TestIdentity;
-import net.corda.testing.node.*;
+import net.corda.testing.node.MockNetwork;
+import net.corda.testing.node.MockNetworkNotarySpec;
+import net.corda.testing.node.MockNetworkParameters;
+import net.corda.testing.node.StartedMockNode;
+import net.corda.testing.node.TestCordapp;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.junit.After;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -40,25 +49,20 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
-import static org.junit.Assert.*;
-
 public class FlowTests {
 
     private static final Logger log = LoggerFactory.getLogger(FlowTests.class);
     protected MockNetwork network;
-    protected StartedMockNode observerNode;
-    protected StartedMockNode notaryNode;
-
-    protected StartedMockNode gsNode;
-    protected StartedMockNode hsbcNode;
-
     protected Party notaryParty;
     private Party gsParty;
     private Party cbParty;
     private Party hsbcParty;
-
+    private Party citiParty;
+    protected StartedMockNode observerNode;
+    protected StartedMockNode notaryNode;
+    protected StartedMockNode gsNode;
+    protected StartedMockNode hsbcNode;
+    private StartedMockNode citiNode;
     private StartedMockNode cbNode;
 
     // "CN=Goldman Sachs,OU=Bank,O=Goldman Sachs,L=New York,C=US"
@@ -67,6 +71,10 @@ public class FlowTests {
     // "CN=HSBC,OU=Bank,O=HSBC,L=London,C=GB"
     public static TestIdentity HSBC = new TestIdentity(new CordaX500Name("HSBC", "Bank",
             "HSBC", "London", null, "GB"));
+
+    public static TestIdentity CITI = new TestIdentity(new CordaX500Name("CITI", "Bank",
+            "CITI", "New York", null, "US"));
+
     // "CN=MAS,OU=Observer,O=MAS,L=Singapore,C=SG"
 
     public static TestIdentity OBSERVER = new TestIdentity(new CordaX500Name("MAS", "Observer",
@@ -105,6 +113,10 @@ public class FlowTests {
         cbParty = cbNode.getInfo().getLegalIdentities().get(0);
         hsbcNode = network.createNode(HSBC.getName());
         hsbcParty = hsbcNode.getInfo().getLegalIdentities().get(0);
+
+        citiNode = network.createNode(CITI.getName());
+        citiParty = citiNode.getInfo().getLegalIdentities().get(0);
+
         observerNode = network.createNode(OBSERVER.getName());
         notaryNode = network.getDefaultNotaryNode();
         notaryParty = notaryNode.getInfo().getLegalIdentities().get(0);
@@ -332,9 +344,9 @@ public class FlowTests {
         gsAmount = gsToken.getAmount().getQuantity() * gsToken.getAmount().getDisplayTokenSize().doubleValue();
         double hsbcAmount = hsbcToken.getAmount().getQuantity() * hsbcToken.getAmount().getDisplayTokenSize().doubleValue();
         assertEquals("There should be 3000 going to Goldman Sachs",0 ,
-                Double.compare(3000.00,gsAmount));
+                Double.compare(3000.00, gsAmount));
         assertEquals("There should be 2000 in the HSBC",0,
-                Double.compare(2000.00,hsbcAmount));
+                Double.compare(2000.00, hsbcAmount));
 
         total = gsNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("EUR")).get();
         assertEquals(0, new BigDecimal("3000.00").compareTo(total)); // because the fractionDigits is 2 for currencies
@@ -390,8 +402,6 @@ public class FlowTests {
         assertEquals(bondTokenId_50, bondTokenId_100);
         BondState bond100 = CustomQuery.queryBondByLinearID(UniqueIdentifier.Companion.fromString(bondTokenId_100), gsNode.getServices())
                 .getState().getData();
-        long couponLeftForBond100 = bond100.getCouponPaymentLeft();
-        String nextCouponDateForBond100 = bond100.getNextCouponDate();
         assertEquals(bond50.getNextCouponDate(), bond100.getNextCouponDate());
 
         amountGS = amountGS + (100 * 1000);
@@ -429,9 +439,9 @@ public class FlowTests {
 
 
 
-    @Ignore
+
     @Test
-    public void testScheduledCouponPayments() throws ExecutionException, InterruptedException {
+    public void testTransferBondToken() throws ExecutionException, InterruptedException {
         cbNode.startFlow(new TransferTokenFlow.TransferTokenInitiator("2000000", "ARS", hsbcParty));
         network.runNetwork();
         // Create Term
@@ -440,7 +450,7 @@ public class FlowTests {
                 "CB", "ARS", "AAA",2));
         network.runNetwork();
 
-            String response = future.get().split(">")[1];
+        String response = future.get().split(">")[1];
         JSONObject json = (JSONObject) new JSONTokener(response).nextValue();
         String termLinearId = json.getString("linearId");
 
@@ -448,10 +458,16 @@ public class FlowTests {
         CordaFuture<String> future1 = hsbcNode.startFlow(new RequestForBondInitiatorFlow(UniqueIdentifier.Companion.fromString(termLinearId), 50));
         network.runNetwork();
 
-        gsNode.startFlow(new StartCouponPaymentFlow(10));
+        hsbcNode.startFlow(new TransferBondsInitiatorFlow(UniqueIdentifier.Companion.fromString(termLinearId),5, citiParty ));
         network.runNetwork();
 
-        log.info("Starting scheduled payment...");
+        CordaFuture<Long> fut = citiNode.startFlow(new QueryBondToken.GetTokenBalance(termLinearId));
+        Long citiAmount =  fut.get();
+        assertEquals(5L, citiAmount.longValue());
 
+        fut = hsbcNode.startFlow(new QueryBondToken.GetTokenBalance(termLinearId));
+        Long hsbcAmount = fut.get();
+        assertEquals((50L-5L), hsbcAmount.longValue());
     }
+
 }
