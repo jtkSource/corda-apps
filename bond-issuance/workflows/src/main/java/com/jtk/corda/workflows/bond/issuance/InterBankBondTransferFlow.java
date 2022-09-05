@@ -1,6 +1,7 @@
 package com.jtk.corda.workflows.bond.issuance;
 
 import co.paralleluniverse.fibers.Suspendable;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.jtk.corda.CordaParties;
 import com.jtk.corda.states.bond.issuance.BondState;
@@ -30,7 +31,6 @@ import net.corda.core.flows.ReceiveFinalityFlow;
 import net.corda.core.flows.ReceiveStateAndRefFlow;
 import net.corda.core.flows.SendStateAndRefFlow;
 import net.corda.core.flows.StartableByRPC;
-import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import net.corda.core.node.services.IdentityService;
 import net.corda.core.node.services.vault.QueryCriteria;
@@ -86,10 +86,6 @@ public class InterBankBondTransferFlow {
                             .getPointer()
                             .resolve(getServiceHub())
                             .getState().getData();
-                    // check if requested unit is greater than available units
-                    if (unitsOfBond > termState.getUnitsAvailable()) {
-                        throw new FlowException("Requesting for more bonds than available for the term");
-                    }
                     if (termState.getIssuer().equals(bondHolder)) {
                         throw new FlowException("Issuer cannot be recipient of the bond");
                     }
@@ -98,12 +94,17 @@ public class InterBankBondTransferFlow {
                             flowSession.getCounterparty().getName().getCommonName());
                     // send the term state
                     subFlow(new SendStateAndRefFlow(flowSession, ImmutableList.of(termStateAndRef)));
+                    List<BondState> bonds = CustomQuery.queryBondByTermStateLinearID(termIdentifier, getServiceHub());
+                    String bondId = bonds.stream()
+                            .map(BondState::getLinearId)
+                            .map(UniqueIdentifier::toString)
+                            .findAny().orElse("");
 
                     BondTransferNotification nf = new BondTransferNotification(
                             unitsOfBond,
                             cost,
                             termIdentifier.toString(),
-                            "",
+                            bondId,
                             "PENDING");
                     AtomicReference<String> stringAtomicReference = new AtomicReference<>("");
                     Boolean cashSendSuccessfully = flowSession
@@ -201,9 +202,9 @@ public class InterBankBondTransferFlow {
             BondTransferNotification brn = investorSession.receive(BondTransferNotification.class)
                     .unwrap(it -> {
                         // check to see if the holder has bonds in that term
-                        bonds.addAll(
-                                CustomQuery.queryBondByTermStateLinearID
-                                                (UniqueIdentifier.Companion.fromString(it.termId), getServiceHub()));
+                        bonds.addAll(CustomQuery.queryBondByTermStateLinearID
+                                                (UniqueIdentifier.Companion.fromString(it.termId),
+                                                        getServiceHub()));
                         if(bonds.size() == 0 ){
                             it.status = "NoBondsFound";
                             return it;
@@ -227,18 +228,20 @@ public class InterBankBondTransferFlow {
             if(brn.status.equalsIgnoreCase("OK")){
                 investorSession.
                         send(new BondTransferNotification (brn.unitsOfBond, brn.cost, brn.termId, brn.bondIdentifier, brn.status));
-                BondState bondState = bonds.get(0);
-                BondState newBondState = new BondState(
-                        bondState.getIssuer(), counterparty, bondState.getInterestRate(), bondState.getParValue(),
-                        bondState.getMaturityDate(), bondState.getCreditRating(), bondState.getCouponPaymentLeft(),
-                        bondState.getBondStatus(), bondState.getBondType(), bondState.getCurrency(),
-                        bondState.getBondName(), bondState.getTermStateLinearID(), new UniqueIdentifier(),
-                        bondState.getPaymentFrequencyInMonths(), bondState.getIssueDate(), bondState.getNextCouponDate());
-                TransactionState<BondState> transactionState = new TransactionState<>(newBondState, notary);
-                List<Party> bondObservers = new ArrayList<>();
-                bondObservers.addAll(observers);
-                bondObservers.add(bondState.getIssuer());
-                subFlow(new CreateEvolvableTokens(transactionState, bondObservers));
+                if(Strings.isNullOrEmpty(brn.getBondIdentifier())){
+                    BondState bondState = bonds.get(0);
+                    BondState newBondState = new BondState(
+                            bondState.getIssuer(), counterparty, bondState.getInterestRate(), bondState.getParValue(),
+                            bondState.getMaturityDate(), bondState.getCreditRating(), bondState.getCouponPaymentLeft(),
+                            bondState.getBondStatus(), bondState.getBondType(), bondState.getCurrency(),
+                            bondState.getBondName(), bondState.getTermStateLinearID(), new UniqueIdentifier(),
+                            bondState.getPaymentFrequencyInMonths(), bondState.getIssueDate(), bondState.getNextCouponDate());
+                    TransactionState<BondState> transactionState = new TransactionState<>(newBondState, notary);
+                    List<Party> bondObservers = new ArrayList<>();
+                    bondObservers.addAll(observers);
+                    bondObservers.add(bondState.getIssuer());
+                    subFlow(new CreateEvolvableTokens(transactionState, bondObservers));
+                }
 
                 final QueryCriteria heldByMeCriteria = QueryUtilities.heldTokenAmountCriteria(its.toPointer(), bondHolder);
                 FungibleToken transferTokens = new FungibleTokenBuilder()

@@ -73,6 +73,15 @@ public class CustomQuery {
                 .orElseThrow(()-> new IllegalArgumentException("TeamStateLinearID ="+teamStateLinearID.toString()+ " not found from vault"));
     }
 
+    public static StateAndRef<TermState> queryInActiveTermsByTermStateLinearID(UniqueIdentifier teamStateLinearID, ServiceHub serviceHub) {
+        List<StateAndRef<TermState>> statesAndRef = serviceHub.getVaultService().queryBy(TermState.class).getStates();
+        return statesAndRef.stream()
+                .filter(sr -> sr.getState().getData().getLinearId().equals(teamStateLinearID))
+                .filter(sr -> !sr.getState().getData().getBondStatus().equals(BondStatus.ACTIVE.name()))
+                .findAny()
+                .orElseThrow(()-> new IllegalArgumentException("TeamStateLinearID ="+teamStateLinearID.toString()+ " not found from vault"));
+    }
+
     public static List<BondState> queryBondByTermStateLinearID(UniqueIdentifier uniqueIdentifier, ServiceHub serviceHub) {
         List<StateAndRef<BondState>> statesAndRef = serviceHub.getVaultService().queryBy(BondState.class).getStates();
         return statesAndRef.stream()
@@ -82,6 +91,17 @@ public class CustomQuery {
                 .filter(bs-> bs.getTermStateLinearID().equals(uniqueIdentifier))
                 .collect(Collectors.toList());
     }
+
+    public static List<BondState> queryInActiveBondByTermStateLinearID(UniqueIdentifier uniqueIdentifier, ServiceHub serviceHub) {
+        List<StateAndRef<BondState>> statesAndRef = serviceHub.getVaultService().queryBy(BondState.class).getStates();
+        return statesAndRef.stream()
+                .map(sr->sr.getState().getData().toPointer(BondState.class))
+                .map(p->p.getPointer().resolve(serviceHub).getState().getData())
+                .filter(bs-> !bs.getBondStatus().equals(BondStatus.ACTIVE.name()))
+                .filter(bs-> bs.getTermStateLinearID().equals(uniqueIdentifier))
+                .collect(Collectors.toList());
+    }
+
 
     public static StateAndRef<BondState> queryBondByLinearID(UniqueIdentifier bondStateLinearID, ServiceHub serviceHub) {
         List<StateAndRef<BondState>> statesAndRef = serviceHub.getVaultService().queryBy(BondState.class).getStates();
@@ -104,7 +124,19 @@ public class CustomQuery {
                     return bondMaturityDate.isAfter(queryMaturityDate);
                 })
                 .collect(Collectors.toList());
-
+    }
+    public static Collection<BondState> queryBondsPointerEqualMaturityDate(String maturityDate, ServiceHub serviceHub) {
+        List<StateAndRef<BondState>> statesAndRef = serviceHub.getVaultService().queryBy(BondState.class).getStates();
+        return statesAndRef.stream()
+                .map(sr->sr.getState().getData().toPointer(BondState.class))
+                .map(p->p.getPointer().resolve(serviceHub).getState().getData())
+                .filter(ts-> ts.getBondStatus().equals(BondStatus.ACTIVE.name()))
+                .filter(ts-> {
+                    LocalDate bondMaturityDate = LocalDate.parse(ts.getMaturityDate(), locateDateformat);
+                    LocalDate queryMaturityDate = LocalDate.parse(maturityDate, locateDateformat);
+                    return bondMaturityDate.isEqual(queryMaturityDate);
+                })
+                .collect(Collectors.toList());
     }
     public static List<BondState> queryBondsPointerWithCouponDate(String couponDate, ServiceHub serviceHub) {
         List<StateAndRef<BondState>> statesAndRef = serviceHub.getVaultService().queryBy(BondState.class).getStates();

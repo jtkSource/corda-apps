@@ -129,4 +129,26 @@ public class QueryBondTermsFlow {
                     .resolve(getServiceHub()).getState().getData().toJson();
         }
     }
+
+    @InitiatingFlow
+    @StartableByRPC
+    public static class GetInActiveBondTermByTermStateLinearID extends FlowLogic<String>{
+        private final ProgressTracker progressTracker = new ProgressTracker();
+        private final UniqueIdentifier teamStateLinearID;
+
+        public GetInActiveBondTermByTermStateLinearID(UniqueIdentifier teamStateLinearID) {
+            this.teamStateLinearID = teamStateLinearID;
+        }
+        @Override
+        public ProgressTracker getProgressTracker() {
+            return progressTracker;
+        }
+        @Override
+        @Suspendable
+        public String call() {
+            StateAndRef<TermState> termSateAndRef = CustomQuery.queryInActiveTermsByTermStateLinearID(teamStateLinearID, getServiceHub());
+            return termSateAndRef.getState().getData().toPointer().getPointer()
+                    .resolve(getServiceHub()).getState().getData().toJson();
+        }
+    }
 }

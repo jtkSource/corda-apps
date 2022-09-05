@@ -39,6 +39,30 @@ public class QueryBondsFlow {
 
     @InitiatingFlow
     @StartableByRPC
+    public static class GetInActiveBondByTermStateLinearID extends FlowLogic<String> {
+        private final ProgressTracker progressTracker = new ProgressTracker();
+        private final UniqueIdentifier teamStateLinearID;
+
+        public GetInActiveBondByTermStateLinearID(UniqueIdentifier teamStateLinearID) {
+            this.teamStateLinearID = teamStateLinearID;
+        }
+        @Override
+        public ProgressTracker getProgressTracker() {
+            return progressTracker;
+        }
+        @Override
+        @Suspendable
+        public String call() {
+            return CustomQuery.queryInActiveBondByTermStateLinearID(teamStateLinearID, getServiceHub())
+                    .stream()
+                    .map(BondState::toJson)
+                    .collect(Collectors.toList())
+                    .toString();
+        }
+    }
+
+    @InitiatingFlow
+    @StartableByRPC
     public static class GetBondLessThanMaturityDate extends FlowLogic<String>{
         private final ProgressTracker progressTracker = new ProgressTracker();
         private final String maturityDate;

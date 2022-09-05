@@ -1,8 +1,10 @@
 package com.jtk.corda.workflows;
 
 import com.google.common.collect.ImmutableList;
+import com.jtk.corda.contants.BondStatus;
 import com.jtk.corda.states.bond.issuance.BondState;
 import com.jtk.corda.workflows.bond.coupons.CouponPaymentFlow;
+import com.jtk.corda.workflows.bond.coupons.RedeemCouponPaymentFlow;
 import com.jtk.corda.workflows.bond.issuance.CreateAndIssueTermFlow;
 import com.jtk.corda.workflows.bond.issuance.InterBankBondTransferFlow;
 import com.jtk.corda.workflows.bond.issuance.QueryBondTermsFlow;
@@ -125,13 +127,14 @@ public class FlowTests {
          * Create Terms for testing
          */
         // 10 billion GBP issue to CB
-        cbNode.startFlow(new CreateCashFlow("10000000000","GBP",0.82));
+        cbNode.startFlow(new CreateCashFlow("10000000000","GBP",1.15));
         network.runNetwork();
-        cbNode.startFlow(new CreateCashFlow("10000000000","PHP",55.72));
+        cbNode.startFlow(new CreateCashFlow("10000000000","PHP",0.018));
         network.runNetwork();
-        cbNode.startFlow(new CreateCashFlow("10000000000","ARS",55.72));
+        cbNode.startFlow(new CreateCashFlow("10000000000","ARS",0.0072));
         network.runNetwork();
-
+        cbNode.startFlow(new CreateCashFlow("10000000000","THB",0.027));
+        network.runNetwork();
         CordaFuture<String> future = gsNode.startFlow(new CreateAndIssueTermFlow("RFB-GS-TEST1",3.2,1000,
                 1000,"20270806", "CB", "USD", "AAA",2));
         network.runNetwork();
@@ -461,7 +464,7 @@ public class FlowTests {
         String termLinearId = json.getString("linearId");
 
         // Request for Bond Issue
-        CordaFuture<String> future1 = hsbcNode.startFlow(new RequestForBondInitiatorFlow(UniqueIdentifier.Companion.fromString(termLinearId), 50));
+        hsbcNode.startFlow(new RequestForBondInitiatorFlow(UniqueIdentifier.Companion.fromString(termLinearId), 50));
         network.runNetwork();
 
         citiNode.startFlow(new InterBankBondTransferFlow.InterBankBondTransferFlowInitiator(UniqueIdentifier.Companion.fromString(termLinearId),
@@ -486,7 +489,6 @@ public class FlowTests {
 
         assertEquals(jsonCiti.getString("termStateLinearID"), jsonHsbc.getString("termStateLinearID"));
         assertNotEquals(jsonCiti.getString("linearId"), jsonHsbc.getString("linearId"));
-
 
         CordaFuture<String> transferFut = citiNode.startFlow(new InterBankBondTransferFlow.
                 InterBankBondTransferFlowInitiator(UniqueIdentifier.Companion.fromString(termLinearId), 50, 200, hsbcParty));
@@ -513,9 +515,9 @@ public class FlowTests {
         BigDecimal totalHsbcAmount = hsbcNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("ARS")).get();
         BigDecimal totalCitiAmount = citiNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("ARS")).get();
 
-        CordaFuture<String> gsCouponFuture = gsNode.startFlow(new CouponPaymentFlow(nCouponDate));
+        // start coupon payments issued by gs
+        gsNode.startFlow(new CouponPaymentFlow(nCouponDate));
         network.runNetwork();
-
 
         // coupon1 = 24000.0
         //coupon2 = 2666.666666666667
@@ -530,14 +532,73 @@ public class FlowTests {
 
         totalWithCoupon = citiNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("ARS")).get();
         assertEquals(totalCitiAmount.doubleValue() + (coupon2), totalWithCoupon.doubleValue(),0.01); // because the fractionDigits is 2 for currencies
+    }
+
+    @Test
+    public void redeemBondEarly() throws ExecutionException, InterruptedException {
+        final Integer totalBankAccount = new Integer("2000000");
+        cbNode.startFlow(new TransferTokenFlow.TransferTokenInitiator(totalBankAccount.toString(), "THB", gsParty));
+        network.runNetwork();
+        cbNode.startFlow(new TransferTokenFlow.TransferTokenInitiator(totalBankAccount.toString(), "THB", hsbcParty));
+        network.runNetwork();
+        cbNode.startFlow(new TransferTokenFlow.TransferTokenInitiator(totalBankAccount.toString(), "THB", citiParty));
+        network.runNetwork();
+
+        // Create Term
+        CordaFuture<String> future = gsNode.startFlow(new CreateAndIssueTermFlow(
+                "Beta-GS-TEST-BOND",3.2, 1000,
+                1000, "20270806", "CB",
+                "THB", "AAA",2));
+        network.runNetwork();
+
+        String response = future.get().split(">")[1];
+        JSONObject json = (JSONObject) new JSONTokener(response).nextValue();
+        String termLinearId = json.getString("linearId");
+
+        hsbcNode.startFlow(new RequestForBondInitiatorFlow(UniqueIdentifier.Companion.fromString(termLinearId), 500));
+        network.runNetwork();
+
+        citiNode.startFlow(new InterBankBondTransferFlow.InterBankBondTransferFlowInitiator(UniqueIdentifier.Companion.fromString(termLinearId),
+                150,200, hsbcParty ));
+        network.runNetwork();
+
+        CordaFuture<Long> fut = citiNode.startFlow(new QueryBondToken.GetTokenBalance(termLinearId));
+        Long citiAmount =  fut.get();
+        assertEquals(150L, citiAmount.longValue());
+
+        fut = hsbcNode.startFlow(new QueryBondToken.GetTokenBalance(termLinearId));
+        Long hsbcAmount = fut.get();
+        assertEquals((500L - 150L), hsbcAmount.longValue());
 
 
-/**
- * totalGsAmount = {BigDecimal@18709} "2050200.0" -> 2023533.34
- * totalHsbcAmount = {BigDecimal@18710} "1950000.0" -> 1974000.0
- * totalCitiAmount = {BigDecimal@18711} "1999800.0"
- */
+        BigDecimal totalGsAmount = gsNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("THB")).get();
+        BigDecimal totalHsbcAmount = hsbcNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("THB")).get();
+        BigDecimal totalCitiAmount = citiNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("THB")).get();
 
+        gsNode.startFlow(new RedeemCouponPaymentFlow.RedeemCouponInitiator(termLinearId, true));
+        network.runNetwork();
+
+        double coupon = 1000.0;
+        BigDecimal totalWithCoupon = gsNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("THB")).get();
+        assertEquals(totalGsAmount.doubleValue() - (coupon * 2), totalWithCoupon.doubleValue(), 0.01); // because the fractionDigits is 2 for currencies
+
+        totalWithCoupon = hsbcNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("THB")).get();
+        assertEquals(totalHsbcAmount.doubleValue() + (coupon), totalWithCoupon.doubleValue(),0.01); // because the fractionDigits is 2 for currencies
+
+        totalWithCoupon = citiNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("THB")).get();
+        assertEquals(totalCitiAmount.doubleValue() + (coupon), totalWithCoupon.doubleValue(),0.01); // because the fractionDigits is 2 for currencies
+
+        CordaFuture<String> terms = gsNode.startFlow(new QueryBondTermsFlow.GetInActiveBondTermByTermStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId)));
+        response = terms.get();
+        json = (JSONObject) new JSONTokener(response).nextValue();
+        assertEquals(BondStatus.MATURED.name(), json.getString("bondStatus"));
+
+        CordaFuture<String> bonds = gsNode.startFlow(new QueryBondsFlow.GetInActiveBondByTermStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId)));
+        JSONArray jsonArray = new JSONArray(bonds.get());
+        for (int i = 0; i < jsonArray.length(); i++) {
+            json = jsonArray.getJSONObject(i);
+            assertEquals(BondStatus.MATURED.name(), json.getString("bondStatus"));
+        }
     }
 
 }

@@ -2,6 +2,7 @@ package com.jtk.corda.workflows.bond.coupons;
 
 import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.collect.ImmutableList;
+import static com.jtk.corda.contants.BondStatus.ACTIVE;
 import com.jtk.corda.states.bond.issuance.BondState;
 import com.jtk.corda.workflows.cash.issuance.TransferTokenFlow;
 import com.jtk.corda.workflows.utils.CouponPaymentUtil;
@@ -51,6 +52,7 @@ public class CouponPaymentFlow extends FlowLogic<String> {
         List<BondState> bondIssuedByMe = CustomQuery.queryBondsPointerWithCouponDate(couponDate, getServiceHub())
                 .stream()
                 .filter(bondState -> bondState.getIssuer().equals(me))
+                .filter(bondState -> bondState.getBondStatus().equalsIgnoreCase(ACTIVE.name()))
                 .collect(Collectors.toList());
         log.info("Found {} coupons to pay ", bondIssuedByMe.size());
         for (BondState bs:  bondIssuedByMe){
@@ -104,7 +106,7 @@ public class CouponPaymentFlow extends FlowLogic<String> {
                 LocalDate  mDate = LocalDate.parse(bs.getMaturityDate(),locateDateformat);
                 String  nCouponDate = locateDateformat.format(nextCouponDate);
                 if(nextCouponDate.isAfter(mDate)){
-                    nCouponDate = "";
+                    nCouponDate = couponDate;
                 }
                 long couponPaymentLeft = bs.getCouponPaymentLeft() - 1;
                 BondState newBondState = new BondState(
