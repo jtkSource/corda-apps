@@ -10,7 +10,12 @@ import com.jtk.corda.workflows.bond.issuance.QueryBondToken;
 import com.jtk.corda.workflows.cash.issuance.TransferTokenFlow;
 import com.jtk.corda.workflows.utils.CustomQuery;
 import com.jtk.corda.workflows.utils.Utility;
+import com.r3.corda.lib.tokens.contracts.types.TokenPointer;
+import com.r3.corda.lib.tokens.contracts.types.TokenType;
+import com.r3.corda.lib.tokens.workflows.flows.rpc.RedeemFungibleTokens;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.UpdateEvolvableToken;
+import com.r3.corda.lib.tokens.workflows.utilities.QueryUtilities;
+import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.FinalityFlow;
@@ -141,6 +146,7 @@ public class RedeemCouponPaymentFlow {
                 subFlow(new TransferTokenFlow.
                         TransferTokenInitiator(String.valueOf(coupon), bs.getCurrency(), bs.getInvestor()));
                 setOfTerms.add(bs.getTermStateLinearID());
+
                 BondState newBondState = new BondState(
                         me, bs.getInvestor(), bs.getInterestRate(),bs.getParValue(),
                         bs.getMaturityDate(), bs.getCreditRating(), 0,
@@ -151,12 +157,15 @@ public class RedeemCouponPaymentFlow {
                 subFlow(new FinalityFlow(txId, ImmutableList.of(bondHolderSession)));
             }
             for (UniqueIdentifier id : setOfTerms){
-                StateAndRef<TermState> termStateRef = CustomQuery.
+                TokenPointer<TermState> termStateTokenPointer = CustomQuery.
                         queryTermsByTermStateLinearID(id, getServiceHub())
                         .getState()
-                        .getData().toPointer().getPointer()
+                        .getData().toPointer();
+                StateAndRef<TermState> termStateRef = termStateTokenPointer.getPointer()
                         .resolve(getServiceHub());
                 TermState termState = termStateRef.getState().getData();
+//                Amount<TokenType> amount = QueryUtilities.tokenBalance(getServiceHub().getVaultService(), termStateTokenPointer);
+//                subFlow(new RedeemFungibleTokens(amount, termState.getIssuer(), bondObservers));
                 TermState newTermState = new TermState
                         (termState.getIssuer(), termState.getInvestors(), termState.getBondName(),
                                 BondStatus.MATURED.name(),termState.getInterestRate(), termState.getParValue(),
