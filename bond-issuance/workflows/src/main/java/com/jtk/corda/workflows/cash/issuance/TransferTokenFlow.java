@@ -14,6 +14,8 @@ import com.r3.corda.lib.tokens.workflows.utilities.FungibleTokenBuilder;
 import com.r3.corda.lib.tokens.workflows.utilities.QueryUtilities;
 import net.corda.core.flows.FlowException;
 import net.corda.core.flows.FlowLogic;
+import net.corda.core.flows.FlowSession;
+import net.corda.core.flows.InitiatedBy;
 import net.corda.core.flows.InitiatingFlow;
 import net.corda.core.flows.StartableByRPC;
 import net.corda.core.identity.Party;
@@ -102,11 +104,7 @@ public class TransferTokenFlow {
                 progressTracker.setCurrentStep(TRANSFER_TOKENS);
                 PartyAndAmount<TokenType> partyAmount = new PartyAndAmount(recipient, transferTokens.getAmount());
 
-                SignedTransaction stx = subFlow(new MoveFungibleTokens(
-                        Collections.singletonList(partyAmount),
-                        observers,
-                        heldByMeCriteria,
-                        me));
+                SignedTransaction stx = subFlow( new MoveFungibleTokens(Collections.singletonList(partyAmount), observers, heldByMeCriteria, me));
 
                 progressTracker.setCurrentStep(DONE);
                 log.info(String.format("Transferred Cash Tokens >\n { " +
@@ -127,4 +125,22 @@ public class TransferTokenFlow {
             }
         }
     }
+
+    @InitiatedBy(TransferTokenInitiator.class)
+    public static class TransferTokenResponder extends FlowLogic<SignedTransaction>{
+        private static final Logger log = LoggerFactory.getLogger(TransferTokenResponder.class);
+        private FlowSession flowSession;
+
+        public TransferTokenResponder(FlowSession flowSession){
+            this.flowSession = flowSession;
+        }
+        @Override
+        public SignedTransaction call() throws FlowException {
+            Party recipient = getOurIdentity();
+            Party sender = flowSession.getCounterparty();
+
+            return null;
+        }
+    }
+
 }

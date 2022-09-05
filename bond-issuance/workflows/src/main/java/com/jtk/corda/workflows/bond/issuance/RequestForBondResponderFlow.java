@@ -86,7 +86,6 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
                     }
                     return it;
                 });
-
         log.info("Received Request to create {} BondStates",brn.units);
         int newAvailableUnits = investorTermState.getUnitsAvailable() - brn.units;
         if(newAvailableUnits < 0 ){
@@ -163,7 +162,11 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
         }else {
             bondState = bondIssuedByMe.get(0);
         }
-        investorSession.send(new BondRequestNotification(brn.investor, brn.units,"OK",bondState.getLinearId().toString()));
+        investorSession.send(new BondRequestNotification(
+                brn.investor,
+                brn.units,
+                "OK",
+                bondState.getLinearId().toString()));
 
         log.info("Published evolvable tokens for Bond {} ", bondState.getBondName());
 

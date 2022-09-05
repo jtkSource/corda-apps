@@ -67,18 +67,18 @@ public class RequestForBondInitiatorFlow extends FlowLogic<String> {
 
             RequestForBondResponderFlow.BondRequestNotification bondRequestNotification =
                     new RequestForBondResponderFlow.BondRequestNotification(getOurIdentity(), unitsOfBonds, "PENDING", "");
-            // We start by initiating a flow session with the counterparty. We
-            // will use this session to send and receive messages from the
-            // counterparty.
-            FlowSession termIssuerSession = initiateFlow(termState.getIssuer());
+            // We start by initiating a flow session with the counterparty.
+            // We will use this session to send and receive messages from the counterparty.
+
+            FlowSession flowSession = initiateFlow(termState.getIssuer());
             log.info("RequestForBondFlow$Initiator Session initiated for counterparty {}",
-                    termIssuerSession.getCounterparty().getName().getCommonName());
+                    flowSession.getCounterparty().getName().getCommonName());
             // first send the TermState held by the investor
-            subFlow(new SendStateAndRefFlow(termIssuerSession, ImmutableList.of(termStateAndRef)));
+            subFlow(new SendStateAndRefFlow(flowSession, ImmutableList.of(termStateAndRef)));
             // then send the bond request notification
             AtomicReference<String> stringAtomicReference = new AtomicReference<>("");
             Boolean successfullySendCash =
-                    termIssuerSession
+                    flowSession
                             .sendAndReceive(RequestForBondResponderFlow.BondRequestNotification.class, bondRequestNotification)
                             .unwrap(data -> {
                                 if (data.getStatus().equalsIgnoreCase("OK")) {
@@ -102,7 +102,7 @@ public class RequestForBondInitiatorFlow extends FlowLogic<String> {
                             });
             if (successfullySendCash) {
                 try {
-                    SignedTransaction finalTx = subFlow(new ReceiveFinalityFlow(termIssuerSession));
+                    SignedTransaction finalTx = subFlow(new ReceiveFinalityFlow(flowSession));
                     FungibleToken fungibleToken = (FungibleToken) finalTx.getTx().getOutputStates().get(0);
                     Party tokenIssuer = fungibleToken.getIssuer();
                     String issuerCN = tokenIssuer.getName().getCommonName();
@@ -112,7 +112,7 @@ public class RequestForBondInitiatorFlow extends FlowLogic<String> {
                     String tokenIdentifier = fungibleTokenAmount.getToken().getTokenType().getTokenIdentifier();
                     return "{" +
                             "\"tokenType\": \"FungibleToken\", " +
-                            "\"name\": \"BondState\", " +
+                            "\"name\": \"BondToken\", " +
                             "\"tokenIdentifier\": \"" + tokenIdentifier + "\", " +
                             "\"bondIdentifier\": \"" + stringAtomicReference.get() + "\", " +
                             "\"issuer\": \"" + issuerCN + "\", " +
@@ -121,14 +121,14 @@ public class RequestForBondInitiatorFlow extends FlowLogic<String> {
                             "}";
                 } catch (Exception e) {
                     log.error("Unexpected Exception ", e);
-                    throw new IllegalArgumentException("Unexpected Exception in Finalizing the flow");
+                    throw new FlowException("Unexpected Exception in Finalizing the flow");
                 }
             } else {
-                throw new IllegalArgumentException("Cash couldn't be transferred successfully ");
+                throw new FlowException("Cash couldn't be transferred successfully ");
             }
 
         } else {
-            throw new IllegalArgumentException(teamStateLinearID + ": not found xxx");
+            throw new FlowException(teamStateLinearID + ": not found xxx");
         }
     }
 }

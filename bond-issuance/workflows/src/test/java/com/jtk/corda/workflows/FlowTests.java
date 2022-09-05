@@ -4,11 +4,11 @@ import com.google.common.collect.ImmutableList;
 import com.jtk.corda.states.bond.issuance.BondState;
 import com.jtk.corda.workflows.bond.coupons.CouponPaymentFlow;
 import com.jtk.corda.workflows.bond.issuance.CreateAndIssueTermFlow;
+import com.jtk.corda.workflows.bond.issuance.InterBankBondTransferFlow;
 import com.jtk.corda.workflows.bond.issuance.QueryBondTermsFlow;
 import com.jtk.corda.workflows.bond.issuance.QueryBondToken;
 import com.jtk.corda.workflows.bond.issuance.QueryBondsFlow;
 import com.jtk.corda.workflows.bond.issuance.RequestForBondInitiatorFlow;
-import com.jtk.corda.workflows.bond.issuance.TransferBondsInitiatorFlow;
 import com.jtk.corda.workflows.cash.issuance.CreateCashFlow;
 import com.jtk.corda.workflows.cash.issuance.QueryCashTokenFlow;
 import com.jtk.corda.workflows.cash.issuance.TransferTokenFlow;
@@ -37,7 +37,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -442,12 +441,17 @@ public class FlowTests {
 
     @Test
     public void testTransferBondToken() throws ExecutionException, InterruptedException {
-        cbNode.startFlow(new TransferTokenFlow.TransferTokenInitiator("2000000", "ARS", hsbcParty));
+        final Integer totalBankAccount = new Integer("2000000");
+        cbNode.startFlow(new TransferTokenFlow.TransferTokenInitiator(totalBankAccount.toString(), "ARS", hsbcParty));
         network.runNetwork();
+        cbNode.startFlow(new TransferTokenFlow.TransferTokenInitiator(totalBankAccount.toString(), "ARS", citiParty));
+        network.runNetwork();
+
         // Create Term
-        CordaFuture<String> future = gsNode.startFlow(new CreateAndIssueTermFlow("Evita-GS-TEST-BOND",
-                3.2, 1000, 1000, "20270806",
-                "CB", "ARS", "AAA",2));
+        CordaFuture<String> future = gsNode.startFlow(new CreateAndIssueTermFlow(
+                "Evita-GS-TEST-BOND",3.2, 1000,
+                1000, "20270806", "CB",
+                "ARS", "AAA",2));
         network.runNetwork();
 
         String response = future.get().split(">")[1];
@@ -458,7 +462,8 @@ public class FlowTests {
         CordaFuture<String> future1 = hsbcNode.startFlow(new RequestForBondInitiatorFlow(UniqueIdentifier.Companion.fromString(termLinearId), 50));
         network.runNetwork();
 
-        hsbcNode.startFlow(new TransferBondsInitiatorFlow(UniqueIdentifier.Companion.fromString(termLinearId),5, citiParty ));
+        citiNode.startFlow(new InterBankBondTransferFlow.InterBankBondTransferFlowInitiator(UniqueIdentifier.Companion.fromString(termLinearId),
+                5,200, hsbcParty ));
         network.runNetwork();
 
         CordaFuture<Long> fut = citiNode.startFlow(new QueryBondToken.GetTokenBalance(termLinearId));
@@ -467,7 +472,35 @@ public class FlowTests {
 
         fut = hsbcNode.startFlow(new QueryBondToken.GetTokenBalance(termLinearId));
         Long hsbcAmount = fut.get();
-        assertEquals((50L-5L), hsbcAmount.longValue());
+        assertEquals((50L - 5L), hsbcAmount.longValue());
+
+        CordaFuture<String> queryBondsFut = hsbcNode.startFlow(new QueryBondsFlow.GetBondByTermStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId)));
+        String jsonToken = queryBondsFut.get();
+        JSONObject jsonHsbc = new JSONArray(jsonToken).getJSONObject(0);
+
+        queryBondsFut = citiNode.startFlow(new QueryBondsFlow.GetBondByTermStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId)));
+        jsonToken = queryBondsFut.get();
+        JSONObject jsonCiti = new JSONArray(jsonToken).getJSONObject(0);
+
+        assertEquals(jsonCiti.getString("termStateLinearID"), jsonHsbc.getString("termStateLinearID"));
+        assertNotEquals(jsonCiti.getString("linearId"), jsonHsbc.getString("linearId"));
+
+
+        CordaFuture<String> transferFut = citiNode.startFlow(new InterBankBondTransferFlow.
+                InterBankBondTransferFlowInitiator(UniqueIdentifier.Companion.fromString(termLinearId), 50, 200, hsbcParty));
+        network.runNetwork();
+
+        String message = transferFut.get();
+        JSONObject err = new JSONObject(message);
+        assertEquals(err.getString("errorMsg"), "Failed validation for Bond Transfer request - NotEnoughBonds");
+        fut = hsbcNode.startFlow(new QueryBondToken.GetTokenBalance(termLinearId));
+        hsbcAmount = fut.get();
+        assertEquals((50L - 5L), hsbcAmount.longValue());
+
+        fut = citiNode.startFlow(new QueryBondToken.GetTokenBalance(termLinearId));
+        citiAmount =  fut.get();
+        assertEquals(5L, citiAmount.longValue());
+
     }
 
 }
