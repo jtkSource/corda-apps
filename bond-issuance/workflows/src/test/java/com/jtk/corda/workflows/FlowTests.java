@@ -198,7 +198,7 @@ public class FlowTests {
 
         assertEquals(50,json.getLong("amount"));
         assertEquals("FungibleToken",json.getString("tokenType"));
-        assertEquals("BondState",json.getString("name"));
+        assertEquals("BondToken",json.getString("name"));
         assertEquals("Goldman Sachs",json.getString("issuer"));
         assertEquals("HSBC",json.getString("holder"));
         String identifier = json.getString("tokenIdentifier");
@@ -440,8 +440,10 @@ public class FlowTests {
 
 
     @Test
-    public void testTransferBondToken() throws ExecutionException, InterruptedException {
+    public void testTransferBondTokenAndPerformCouponPayment() throws ExecutionException, InterruptedException {
         final Integer totalBankAccount = new Integer("2000000");
+        cbNode.startFlow(new TransferTokenFlow.TransferTokenInitiator(totalBankAccount.toString(), "ARS", gsParty));
+        network.runNetwork();
         cbNode.startFlow(new TransferTokenFlow.TransferTokenInitiator(totalBankAccount.toString(), "ARS", hsbcParty));
         network.runNetwork();
         cbNode.startFlow(new TransferTokenFlow.TransferTokenInitiator(totalBankAccount.toString(), "ARS", citiParty));
@@ -500,6 +502,41 @@ public class FlowTests {
         fut = citiNode.startFlow(new QueryBondToken.GetTokenBalance(termLinearId));
         citiAmount =  fut.get();
         assertEquals(5L, citiAmount.longValue());
+
+        List<BondState> bonds = CustomQuery.
+                queryBondByTermStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId), gsNode.getServices());
+        String nCouponDate = bonds.stream()
+                .map(BondState::getNextCouponDate)
+                .findAny().get();
+
+        BigDecimal totalGsAmount = gsNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("ARS")).get();
+        BigDecimal totalHsbcAmount = hsbcNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("ARS")).get();
+        BigDecimal totalCitiAmount = citiNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("ARS")).get();
+
+        CordaFuture<String> gsCouponFuture = gsNode.startFlow(new CouponPaymentFlow(nCouponDate));
+        network.runNetwork();
+
+
+        // coupon1 = 24000.0
+        //coupon2 = 2666.666666666667
+
+        double coupon1 = 24000.0;
+        double coupon2 = 2666.666666666667;
+        BigDecimal totalWithCoupon = gsNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("ARS")).get();
+        assertEquals(totalGsAmount.doubleValue() - (coupon1+coupon2), totalWithCoupon.doubleValue(), 0.01); // because the fractionDigits is 2 for currencies
+
+        totalWithCoupon = hsbcNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("ARS")).get();
+        assertEquals(totalHsbcAmount.doubleValue() + (coupon1), totalWithCoupon.doubleValue(),0.01); // because the fractionDigits is 2 for currencies
+
+        totalWithCoupon = citiNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("ARS")).get();
+        assertEquals(totalCitiAmount.doubleValue() + (coupon2), totalWithCoupon.doubleValue(),0.01); // because the fractionDigits is 2 for currencies
+
+
+/**
+ * totalGsAmount = {BigDecimal@18709} "2050200.0" -> 2023533.34
+ * totalHsbcAmount = {BigDecimal@18710} "1950000.0" -> 1974000.0
+ * totalCitiAmount = {BigDecimal@18711} "1999800.0"
+ */
 
     }
 
