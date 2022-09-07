@@ -50,12 +50,12 @@ public class OpenAPIVerticle extends AbstractVerticle {
                 .onSuccess(server -> {
                     log.info("Registered routes: \n{} ",
                             router.getRoutes().stream()
-                                    .filter(route -> route.getPath() != null && route.methods() != null)
+                                    .filter(route -> route.getName() != null && route.methods() != null)
                                     .map(route ->
                                             route.methods().stream()
                                                     .filter(Objects::nonNull)
                                                     .map(HttpMethod::toString)
-                                                    .collect(Collectors.joining(",")) + " " + route.getPath())
+                                                    .collect(Collectors.joining(",")) + " " + route.getName())
                                     .collect(Collectors.joining(",\n")));
                     log.info("HTTP server [{}] started on port {}", uuid.toString(), server.actualPort());
                     startPromise.complete();
