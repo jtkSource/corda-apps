@@ -1,15 +1,11 @@
 package com.jtk.corda.workflows.bond.issuance;
 
 import co.paralleluniverse.fibers.Suspendable;
-import com.google.common.collect.ImmutableList;
 import com.jtk.corda.CordaParties;
 import com.jtk.corda.contants.BondStatus;
 import com.jtk.corda.states.bond.issuance.TermState;
 import com.jtk.corda.workflows.utils.Utility;
-import com.r3.corda.lib.tokens.contracts.states.NonFungibleToken;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.CreateEvolvableTokens;
-import com.r3.corda.lib.tokens.workflows.flows.rpc.IssueTokens;
-import com.r3.corda.lib.tokens.workflows.utilities.NonFungibleTokenBuilder;
 import net.corda.core.contracts.TransactionState;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.FlowException;
@@ -20,6 +16,7 @@ import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import net.corda.core.node.services.IdentityService;
 import net.corda.core.transactions.SignedTransaction;
+import net.corda.core.utilities.ProgressTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +42,26 @@ public class CreateAndIssueTermFlow extends FlowLogic<String> {
     private static final Logger log = LoggerFactory.getLogger(CreateAndIssueTermFlow.class);
     private final int paymentFrequencyInMonths;
 
+    private final ProgressTracker progressTracker = new ProgressTracker(
+            AUTHORIZATION,
+            IDENTIFY_OBSERVERS,
+            CREATE_STATES,
+            SIGNING_TRANSACTIONS,
+            DONE
+    );
+    private static final ProgressTracker.Step AUTHORIZATION = new ProgressTracker
+            .Step("Validating Authorized Nodes");
+    private static final ProgressTracker.Step IDENTIFY_OBSERVERS = new ProgressTracker
+            .Step("Identifying Observers");
+
+    private static final ProgressTracker.Step CREATE_STATES = new ProgressTracker
+            .Step("Creating Term States");
+
+    private static final ProgressTracker.Step SIGNING_TRANSACTIONS = new ProgressTracker
+            .Step("Signing Transaction");
+
+    private static final ProgressTracker.Step DONE = new ProgressTracker
+            .Step("Done Processing Flow");
 
     public CreateAndIssueTermFlow(String bondName, double interestRate, int parValue, int unitsAvailable,
                                   String maturityDate, String bondType, String currency,
@@ -65,22 +82,27 @@ public class CreateAndIssueTermFlow extends FlowLogic<String> {
     @Suspendable
     public String call() throws FlowException {
         // Sample specific - retrieving the hard-coded observers
+        progressTracker.setCurrentStep(AUTHORIZATION);
+
         Party company = getOurIdentity();
         log.info("Flow called by {}", company.getName().getOrganisation());
-
         if(!company.getName().getOrganisationUnit().equals("Bank")) {
-            throw new IllegalArgumentException("Only Banks can call CreateAndIssueTerm...");
+            throw new FlowException("Only Banks can call CreateAndIssueTerm...");
         }
+        progressTracker.setCurrentStep(IDENTIFY_OBSERVERS);
         CordaX500Name notaryX500Name = CordaParties.NOTARY.getCordaX500Name();
         IdentityService identityService = getServiceHub().getIdentityService();
         List<Party> otherBanks = Utility.getLegalIdentitiesByOU(identityService, "Bank")
                 .stream()
                 .filter(party -> !party.getName().getCommonName().equals(company.getName().getCommonName()))
                 .collect(Collectors.toList());
+        // Observers include the notary and all banks interested in knowing the terms
         List<Party> observers = Utility.getLegalIdentitiesByOU(identityService,"Observer");
         observers.addAll(otherBanks);
         log.info("Identified observers to publish term-state: {}",
                 observers.stream().map(party -> party.getName().getCommonName()).collect(Collectors.joining(",")));
+
+        progressTracker.setCurrentStep(CREATE_STATES);
 
         final TermState termState = new TermState(
                 company, new HashSet<>(), bondName, BondStatus.ACTIVE.name(),
@@ -91,28 +113,22 @@ public class CreateAndIssueTermFlow extends FlowLogic<String> {
 
         log.info("Created TermState {}", termState);
 
-        final Party notary = getServiceHub().getNetworkMapCache()
-                .getNotary(notaryX500Name);
+        final Party notary = getServiceHub().getNetworkMapCache().getNotary(notaryX500Name);
         log.info("Identified Notary {}", notary);
 
+        progressTracker.setCurrentStep(SIGNING_TRANSACTIONS);
         TransactionState<TermState> transactionState = new TransactionState<>(termState, notary);
+        SignedTransaction stx = subFlow(new CreateEvolvableTokens(transactionState, observers));
 
-        // Using the build-in flow to create an evolvable token type -- Term
-        subFlow(new CreateEvolvableTokens(transactionState, observers));
-
-
-        NonFungibleToken termStateNFT = new NonFungibleTokenBuilder()
-                .ofTokenType(termState.toPointer())
-                .issuedBy(getOurIdentity())
-                .heldBy(getOurIdentity())
-                .buildNonFungibleToken();
-        SignedTransaction stx = subFlow(new IssueTokens(ImmutableList.of(termStateNFT), observers));
         log.info("Done CreateAndIssueTerm...");
+
         String jsnStr = String.format("{\"transactionID\":\"%s\"" +
                         ",\"bondName\":\"%s\"" +
                         ",\"parValue\":%s" +
                         ",\"linearId\":\"%s\"}",
                 stx.getId(), this.bondName, this.parValue, termState.getLinearId());
+
+        progressTracker.setCurrentStep(DONE);
         return "Generated 1 term >"+jsnStr;
     }
 }
