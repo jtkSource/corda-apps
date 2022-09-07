@@ -204,7 +204,7 @@ public class InterBankBondTransferFlow {
 
         private final ProgressTracker progressTracker = new ProgressTracker(
                 RECEIVE_TERM_STATE,
-                VALIDATE_TERM_STATE,
+                VALIDATE_TERM_AND_BOND_STATE,
                 IDENTIFY_OBSERVERS,
                 CREATE_STATES,
                 TRANSFER_TOKENS,
@@ -218,8 +218,8 @@ public class InterBankBondTransferFlow {
         private static final ProgressTracker.Step RECEIVE_TERM_STATE = new ProgressTracker
                 .Step("Receiving Term States from Bond Requester");
 
-        private static final ProgressTracker.Step VALIDATE_TERM_STATE = new ProgressTracker
-                .Step("Validating Term states");
+        private static final ProgressTracker.Step VALIDATE_TERM_AND_BOND_STATE = new ProgressTracker
+                .Step("Validating Term and Bond states");
 
         private static final ProgressTracker.Step CREATE_STATES = new ProgressTracker
                 .Step("Creating new Bond States");
@@ -233,7 +233,7 @@ public class InterBankBondTransferFlow {
                 .Step("Signing Transaction");
 
         private static final ProgressTracker.Step SEND_BOND_TRANSFER_RESPONSE = new ProgressTracker
-                .Step("Sending response to Transferring Bonds ");
+                .Step("Sending response to Transferring Bonds");
 
         private static final ProgressTracker.Step DONE = new ProgressTracker
                 .Step("Done Processing Responder Flow");
@@ -274,7 +274,7 @@ public class InterBankBondTransferFlow {
             List<BondState> bonds = new ArrayList<>();
             BondTransferNotification brn = bondHolderSession.receive(BondTransferNotification.class)
                     .unwrap(it -> {
-                        progressTracker.setCurrentStep(VALIDATE_TERM_STATE);
+                        progressTracker.setCurrentStep(VALIDATE_TERM_AND_BOND_STATE);
 
                         // check to see if the holder has bonds in that term
                         bonds.addAll(CustomQuery.queryBondByTermStateLinearID
