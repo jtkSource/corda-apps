@@ -37,13 +37,13 @@ public class TransferTokenFlow {
     private static final ProgressTracker.Step IDENTIFY_OBSERVERS = new ProgressTracker
             .Step("Identifying Observers");
     private static final ProgressTracker.Step FIND_TOKEN = new ProgressTracker
-            .Step("Fetching Tokens");
+            .Step("Fetching Digital Currency");
 
     private static final ProgressTracker.Step TRANSFER_TOKENS = new ProgressTracker
-            .Step("Transferring tokens");
+            .Step("Transferring Digital Currency");
 
     private static final ProgressTracker.Step DONE = new ProgressTracker
-            .Step("Done Transferring Tokens");
+            .Step("Done Transferring Digital Currency");
     private static final ProgressTracker progressTracker = new ProgressTracker(
             AUTHORIZATION,
             IDENTIFY_OBSERVERS,

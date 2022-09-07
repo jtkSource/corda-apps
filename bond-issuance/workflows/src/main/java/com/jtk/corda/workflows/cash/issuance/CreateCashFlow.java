@@ -48,10 +48,10 @@ public class CreateCashFlow extends FlowLogic<String> {
             .Step("Identifying Notaries");
 
     private static final ProgressTracker.Step CREATE_TOKEN = new ProgressTracker
-            .Step("Creating Tokens");
+            .Step("Creating Digital Currency");
 
     private static final ProgressTracker.Step ISSUE_TOKENS = new ProgressTracker
-            .Step("Issue Tokens to singed transaction");
+            .Step("Issue Digital Currency to singed transaction");
 
     private static final ProgressTracker.Step DONE = new ProgressTracker
             .Step("Done Issuing Tokens");
