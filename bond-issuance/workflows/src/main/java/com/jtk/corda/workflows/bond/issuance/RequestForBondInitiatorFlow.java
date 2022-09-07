@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 
@@ -50,7 +49,7 @@ public class RequestForBondInitiatorFlow extends FlowLogic<String> {
         }
 
         //find term based on linearID and see if the requested amount is available
-        StateAndRef<TermState> termStateAndRef = CustomQuery.queryTermsByTermStateLinearID
+        StateAndRef<TermState> termStateAndRef = CustomQuery.queryActiveTermsByTermStateLinearID
                 (teamStateLinearID, getServiceHub());
         if (termStateAndRef != null) {
             log.info("Term: {} is present ", teamStateLinearID);

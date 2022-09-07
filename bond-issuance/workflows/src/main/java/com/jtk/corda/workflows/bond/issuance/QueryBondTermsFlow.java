@@ -110,11 +110,11 @@ public class QueryBondTermsFlow {
 
     @InitiatingFlow
     @StartableByRPC
-    public static class GetBondTermByTermStateLinearID extends FlowLogic<String>{
+    public static class GetActiveBondTermByTermStateLinearID extends FlowLogic<String>{
         private final ProgressTracker progressTracker = new ProgressTracker();
         private final UniqueIdentifier teamStateLinearID;
 
-        public GetBondTermByTermStateLinearID(UniqueIdentifier teamStateLinearID) {
+        public GetActiveBondTermByTermStateLinearID(UniqueIdentifier teamStateLinearID) {
             this.teamStateLinearID = teamStateLinearID;
         }
         @Override
@@ -124,7 +124,9 @@ public class QueryBondTermsFlow {
         @Override
         @Suspendable
         public String call() {
-            StateAndRef<TermState> termSateAndRef = CustomQuery.queryTermsByTermStateLinearID(teamStateLinearID, getServiceHub());
+            StateAndRef<TermState> termSateAndRef = CustomQuery.queryActiveTermsByTermStateLinearID(teamStateLinearID, getServiceHub());
+            if (termSateAndRef == null)
+                return "{}";
             return termSateAndRef.getState().getData().toPointer().getPointer()
                     .resolve(getServiceHub()).getState().getData().toJson();
         }
@@ -147,6 +149,8 @@ public class QueryBondTermsFlow {
         @Suspendable
         public String call() {
             StateAndRef<TermState> termSateAndRef = CustomQuery.queryInActiveTermsByTermStateLinearID(teamStateLinearID, getServiceHub());
+            if(termSateAndRef == null)
+                return "{}";
             return termSateAndRef.getState().getData().toPointer().getPointer()
                     .resolve(getServiceHub()).getState().getData().toJson();
         }

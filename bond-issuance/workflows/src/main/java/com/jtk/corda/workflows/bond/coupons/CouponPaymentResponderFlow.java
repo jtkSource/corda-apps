@@ -33,7 +33,7 @@ public class CouponPaymentResponderFlow extends FlowLogic<SignedTransaction> {
                 numberOfToken,
                 "OK",
                 cpn.getBondLinearID(),
-                cpn.getTermLinearId()));
+                cpn.getTermLinearId(), false));
         return subFlow(new ReceiveFinalityFlow(bondHolderSession));
     }
 }

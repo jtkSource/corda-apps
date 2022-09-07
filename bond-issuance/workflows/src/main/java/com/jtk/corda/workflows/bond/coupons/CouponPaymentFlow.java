@@ -73,7 +73,7 @@ public class CouponPaymentFlow extends FlowLogic<String> {
                                 0L,
                                 "PENDING",
                                 bondLinearId,
-                                bs.getTermStateLinearID().toString());
+                                bs.getTermStateLinearID().toString(), false);
                 Long numberOfTokens = bondHolderSession.sendAndReceive(CouponPaymentNotification.class, couponPaymentNotification)
                         .unwrap(data -> {
                             if (data.status.equals("OK")) {
@@ -148,18 +148,20 @@ public class CouponPaymentFlow extends FlowLogic<String> {
 
         private final String bondLinearID;
         private String termLinearId;
+        private boolean redeem;
 
         @ConstructorForDeserialization
         public CouponPaymentNotification(Party issuer,
                                          Long numberOfTokens,
                                          String status,
                                          String bondLinearID,
-                                         String termLinearId) {
+                                         String termLinearId, boolean redeem) {
             this.issuer = issuer;
             this.numberOfTokens = numberOfTokens;
             this.status = status;
             this.bondLinearID = bondLinearID;
             this.termLinearId = termLinearId;
+            this.redeem = redeem;
         }
 
         public Party getIssuer() {
@@ -180,6 +182,10 @@ public class CouponPaymentFlow extends FlowLogic<String> {
 
         public String getTermLinearId() {
             return termLinearId;
+        }
+
+        public boolean isRedeem() {
+            return redeem;
         }
     }
 }

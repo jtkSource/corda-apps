@@ -70,7 +70,7 @@ public class RequestForBondResponderFlow extends FlowLogic<SignedTransaction>{
         TermState investorTermState = investorTermStateRef.getState().getData();
 
         //query for the current TermStateAndRef
-        StateAndRef<TermState> currentTermStateAndRef = CustomQuery.queryTermsByTermStateLinearID
+        StateAndRef<TermState> currentTermStateAndRef = CustomQuery.queryActiveTermsByTermStateLinearID
                         (investorTermState.getLinearId(), getServiceHub())
                 .getState().getData().toPointer()
                 .getPointer()

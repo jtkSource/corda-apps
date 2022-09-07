@@ -25,8 +25,11 @@ import net.corda.core.flows.FlowSession;
 import net.corda.core.flows.InitiatedBy;
 import net.corda.core.flows.InitiatingFlow;
 import net.corda.core.flows.ReceiveFinalityFlow;
+import net.corda.core.flows.ReceiveStateAndRefFlow;
+import net.corda.core.flows.SendStateAndRefFlow;
 import net.corda.core.flows.StartableByRPC;
 import net.corda.core.identity.Party;
+import net.corda.core.node.services.IdentityService;
 import net.corda.core.transactions.SignedTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,9 +38,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -101,43 +102,55 @@ public class RedeemCouponPaymentFlow {
             List<Party> bondObservers = new ArrayList<>(Utility.getLegalIdentitiesByOU
                     (getServiceHub().getIdentityService(), "Observer"));
             LocalDate mDate = LocalDate.parse(maturityDate, locateDateformat);
-            Set<UniqueIdentifier> setOfTerms = new HashSet<>();
+            StateAndRef<TermState> termStateStateAndRef = CustomQuery.
+                    queryActiveTermsByTermStateLinearID(UniqueIdentifier.Companion.fromString(termId), getServiceHub());
+            if(termStateStateAndRef == null) {
+                throw new FlowException("Couldn't find Active TermState");
+            }
+            TokenPointer<TermState> termStateTokenPointer = termStateStateAndRef
+                    .getState()
+                    .getData().toPointer();
+            StateAndRef<TermState> termStateRef = termStateTokenPointer.getPointer()
+                    .resolve(getServiceHub());
+            TermState termState = termStateRef.getState().getData();
 
             for (BondState bs: bondIssuedByMe){
                 log.info("Calculating coupon on bondId {}", bs.getLinearId());
                 Party holder = bs.getInvestor();
                 int parValue = bs.getParValue();
                 FlowSession bondHolderSession = initiateFlow(holder);
+                subFlow(new SendStateAndRefFlow(bondHolderSession, ImmutableList.of(termStateRef)));
+
                 StateAndRef<BondState> oldBondStateAndRef = CustomQuery.
                         queryBondByLinearID(bs.getLinearId(), getServiceHub());
                 String bondLinearId = bs.getLinearId().toString();
+
                 CouponPaymentFlow.CouponPaymentNotification couponPaymentNotification =
                         new CouponPaymentFlow.CouponPaymentNotification(
                                 me,
                                 0L,
                                 "PENDING",
                                 bondLinearId,
-                                bs.getTermStateLinearID().toString());
-                Long numberOfTokens = bondHolderSession
+                                bs.getTermStateLinearID().toString(), true);
+                Long redeemedTokens = bondHolderSession
                         .sendAndReceive(CouponPaymentFlow.CouponPaymentNotification.class, couponPaymentNotification)
                         .unwrap(data -> {
-                            if (data.getStatus().equals("OK")) {
+                            if (data.getStatus().equals("OK") && data.isRedeem()) {
                                 return data.getNumberOfTokens();
                             } else {
                                 return null;
                             }
-                        });
-                //Long bondTokens = subFlow(new QueryBondToken.GetTokenBalance(couponPaymentNotification.getBondLinearID()));
-                if(numberOfTokens == null){
+                        });                //Long bondTokens = subFlow(new QueryBondToken.GetTokenBalance(couponPaymentNotification.getBondLinearID()));
+                if(redeemedTokens == null){
                     // check if number of tokens match ?
-                    throw new FlowException("Something went wrong with Coupon payment");
+                    throw new FlowException("Something went wrong with redeeming Coupon Payment");
                 }
                 LocalDate nCouponDate = LocalDate.parse(bs.getNextCouponDate(), locateDateformat);
                 double coupon = 0;
                 if(nCouponDate.isBefore(mDate)){
                     long days = Duration.between(mDate, nCouponDate).toDays();
                     double si = parValue / ((((bs.getInterestRate()/100))/365) * days);
-                    coupon = (parValue + si) * numberOfTokens;
+                    coupon = (parValue + si) * redeemedTokens;
                 }else {
                     coupon = parValue;
                 }
@@ -145,35 +158,24 @@ public class RedeemCouponPaymentFlow {
 
                 subFlow(new TransferTokenFlow.
                         TransferTokenInitiator(String.valueOf(coupon), bs.getCurrency(), bs.getInvestor()));
-                setOfTerms.add(bs.getTermStateLinearID());
-
                 BondState newBondState = new BondState(
                         me, bs.getInvestor(), bs.getInterestRate(),bs.getParValue(),
                         bs.getMaturityDate(), bs.getCreditRating(), 0,
                         BondStatus.MATURED.name(), bs.getBondType(), bs.getCurrency(),
                         bs.getBondName(), bs.getTermStateLinearID(),bs.getLinearId(),
                         bs.getPaymentFrequencyInMonths(), bs.getIssueDate(), "");
+
                 SignedTransaction txId = subFlow(new UpdateEvolvableToken(oldBondStateAndRef, newBondState, bondObservers));
                 subFlow(new FinalityFlow(txId, ImmutableList.of(bondHolderSession)));
             }
-            for (UniqueIdentifier id : setOfTerms){
-                TokenPointer<TermState> termStateTokenPointer = CustomQuery.
-                        queryTermsByTermStateLinearID(id, getServiceHub())
-                        .getState()
-                        .getData().toPointer();
-                StateAndRef<TermState> termStateRef = termStateTokenPointer.getPointer()
-                        .resolve(getServiceHub());
-                TermState termState = termStateRef.getState().getData();
-//                Amount<TokenType> amount = QueryUtilities.tokenBalance(getServiceHub().getVaultService(), termStateTokenPointer);
-//                subFlow(new RedeemFungibleTokens(amount, termState.getIssuer(), bondObservers));
-                TermState newTermState = new TermState
-                        (termState.getIssuer(), termState.getInvestors(), termState.getBondName(),
-                                BondStatus.MATURED.name(),termState.getInterestRate(), termState.getParValue(),
-                                0, termState.getRedemptionAvailable(), termState.getLinearId(),
-                                termState.getMaturityDate(), termState.getBondType(), termState.getCurrency(),
-                                termState.getCreditRating(), termState.getPaymentFrequencyInMonths());
-                subFlow(new UpdateEvolvableToken(termStateRef, newTermState, bondObservers));
-            }
+
+            TermState newTermState = new TermState
+                    (termState.getIssuer(), termState.getInvestors(), termState.getBondName(),
+                            BondStatus.MATURED.name(),termState.getInterestRate(), termState.getParValue(),
+                            0, termState.getRedemptionAvailable(), termState.getLinearId(),
+                            termState.getMaturityDate(), termState.getBondType(), termState.getCurrency(),
+                            termState.getCreditRating(), termState.getPaymentFrequencyInMonths());
+            subFlow(new UpdateEvolvableToken(termStateRef, newTermState, bondObservers));
 
             return String.format("{ " +
                             "\"issuer\":\"%s\"," +
@@ -197,15 +199,32 @@ public class RedeemCouponPaymentFlow {
         public SignedTransaction call() throws FlowException {
             Party bondHolder = getOurIdentity();
             Party bondIssuer = bondHolderSession.getCounterparty();
+            IdentityService identityService = getServiceHub().getIdentityService();
+            List<Party> observers = Utility.getLegalIdentitiesByOU(identityService,"Observer");
+            List<StateAndRef<TermState>> investorTermStateRefList =
+                    subFlow(new ReceiveStateAndRefFlow<>(bondHolderSession));
+            StateAndRef<TermState> investorTermStateRef = investorTermStateRefList.get(0);
+            TermState termState = investorTermStateRef.getState().getData();
+
             CouponPaymentFlow.CouponPaymentNotification cpn =
                     bondHolderSession.receive(CouponPaymentFlow.CouponPaymentNotification.class)
                             .unwrap(it -> it);
-            Long numberOfToken = subFlow(new QueryBondToken.GetTokenBalance(cpn.getTermLinearId()));
+            Long numberOfToken;
+            boolean isRedeemed = false;
+            if(cpn.isRedeem()){
+                Amount<TokenType> amount = QueryUtilities.tokenBalanceForIssuer(getServiceHub().getVaultService(),
+                        investorTermStateRef.getState().getData().toPointer(), termState.getIssuer());
+                numberOfToken = amount.getQuantity();
+                subFlow(new RedeemFungibleTokens(amount, termState.getIssuer(), observers));
+                isRedeemed = true;
+            }else {
+                numberOfToken = subFlow(new QueryBondToken.GetTokenBalance(cpn.getTermLinearId()));
+            }
             bondHolderSession.send(new CouponPaymentFlow.CouponPaymentNotification(cpn.getIssuer(),
                     numberOfToken,
                     "OK",
                     cpn.getBondLinearID(),
-                    cpn.getTermLinearId()));
+                    cpn.getTermLinearId(), isRedeemed));
             return subFlow(new ReceiveFinalityFlow(bondHolderSession));
         }
     }

@@ -31,11 +31,12 @@ public class QueryBondToken {
         @Suspendable
         public Long call() throws FlowException {
             TokenPointer<TermState> pointer = CustomQuery.
-                    queryTermsByTermStateLinearID(UniqueIdentifier.Companion.fromString(termLinearID), getServiceHub())
+                    queryAllTermsByTermStateLinearID(UniqueIdentifier.Companion.fromString(termLinearID), getServiceHub())
                     .getState().getData().toPointer();
             Amount<TokenType> bondTokenAmount = QueryUtilities
                     .tokenBalance(getServiceHub().getVaultService(), pointer);
             return bondTokenAmount.getQuantity();
         }
     }
+
 }

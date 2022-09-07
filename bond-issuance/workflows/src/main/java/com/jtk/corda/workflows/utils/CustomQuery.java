@@ -64,13 +64,13 @@ public class CustomQuery {
                 .collect(Collectors.toList());
     }
 
-    public static StateAndRef<TermState> queryTermsByTermStateLinearID(UniqueIdentifier teamStateLinearID, ServiceHub serviceHub) {
+    public static StateAndRef<TermState> queryActiveTermsByTermStateLinearID(UniqueIdentifier teamStateLinearID, ServiceHub serviceHub) {
         List<StateAndRef<TermState>> statesAndRef = serviceHub.getVaultService().queryBy(TermState.class).getStates();
         return statesAndRef.stream()
                 .filter(sr -> sr.getState().getData().getLinearId().equals(teamStateLinearID))
                 .filter(sr -> sr.getState().getData().getBondStatus().equals(BondStatus.ACTIVE.name()))
                 .findAny()
-                .orElseThrow(()-> new IllegalArgumentException("TeamStateLinearID ="+teamStateLinearID.toString()+ " not found from vault"));
+                .orElse(null);
     }
 
     public static StateAndRef<TermState> queryInActiveTermsByTermStateLinearID(UniqueIdentifier teamStateLinearID, ServiceHub serviceHub) {
@@ -79,8 +79,18 @@ public class CustomQuery {
                 .filter(sr -> sr.getState().getData().getLinearId().equals(teamStateLinearID))
                 .filter(sr -> !sr.getState().getData().getBondStatus().equals(BondStatus.ACTIVE.name()))
                 .findAny()
+                .orElse(null);
+    }
+
+
+    public static StateAndRef<TermState> queryAllTermsByTermStateLinearID(UniqueIdentifier teamStateLinearID, ServiceHub serviceHub) {
+        List<StateAndRef<TermState>> statesAndRef = serviceHub.getVaultService().queryBy(TermState.class).getStates();
+        return statesAndRef.stream()
+                .filter(sr -> sr.getState().getData().getLinearId().equals(teamStateLinearID))
+                .findAny()
                 .orElseThrow(()-> new IllegalArgumentException("TeamStateLinearID ="+teamStateLinearID.toString()+ " not found from vault"));
     }
+
 
     public static List<BondState> queryBondByTermStateLinearID(UniqueIdentifier uniqueIdentifier, ServiceHub serviceHub) {
         List<StateAndRef<BondState>> statesAndRef = serviceHub.getVaultService().queryBy(BondState.class).getStates();

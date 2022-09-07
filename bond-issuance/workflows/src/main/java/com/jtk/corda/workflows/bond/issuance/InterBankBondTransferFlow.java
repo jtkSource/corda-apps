@@ -76,10 +76,9 @@ public class InterBankBondTransferFlow {
                     log.error("Only Bank to Bank Transfer is allowed");
                     throw new FlowException("Only Bank to Bank Transfer is allowed");
                 }
-                StateAndRef<TermState> termStateAndRef = CustomQuery.queryTermsByTermStateLinearID
+                StateAndRef<TermState> termStateAndRef = CustomQuery.queryActiveTermsByTermStateLinearID
                         (this.termIdentifier, getServiceHub());
                 if (termStateAndRef != null) {
-
                     log.info("Term: {} is present ", this.termIdentifier);
                     TermState termState = termStateAndRef.getState()
                             .getData().toPointer(TermState.class)
@@ -189,7 +188,7 @@ public class InterBankBondTransferFlow {
             TermState its = investorTermStateRef.getState().getData();
 
             StateAndRef<TermState> currentTermStateAndRef =
-                    CustomQuery.queryTermsByTermStateLinearID(its.getLinearId(), getServiceHub())
+                    CustomQuery.queryActiveTermsByTermStateLinearID(its.getLinearId(), getServiceHub())
                             .getState().getData().toPointer()
                             .getPointer()
                             .resolve(getServiceHub());

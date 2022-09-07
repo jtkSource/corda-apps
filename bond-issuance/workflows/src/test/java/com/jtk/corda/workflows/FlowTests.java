@@ -167,13 +167,13 @@ public class FlowTests {
         log.info("Response to term: {} ->:\n {}",termLinearId, json.toString(2));
 
 
-        CordaFuture<String> bondByLinearId = observerNode.startFlow(new QueryBondTermsFlow.GetBondTermByTermStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId)));
+        CordaFuture<String> bondByLinearId = observerNode.startFlow(new QueryBondTermsFlow.GetActiveBondTermByTermStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId)));
         JSONObject jsonStr = (JSONObject) new JSONTokener(bondByLinearId.get()).nextValue();
         log.info("QueryResponse ->:\n {}",json.toString(2));
         assertEquals(termLinearId, jsonStr.getString("linearId"));
 
 
-        bondByLinearId = hsbcNode.startFlow(new QueryBondTermsFlow.GetBondTermByTermStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId)));
+        bondByLinearId = hsbcNode.startFlow(new QueryBondTermsFlow.GetActiveBondTermByTermStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId)));
         jsonStr = (JSONObject) new JSONTokener(bondByLinearId.get()).nextValue();
         log.info("QueryResponse ->:\n {}",json.toString(2));
         assertEquals(termLinearId, jsonStr.getString("linearId"));
@@ -439,9 +439,6 @@ public class FlowTests {
         assertNotEquals(nnCouponDate, bond50.getNextCouponDate());
     }
 
-
-
-
     @Test
     public void testTransferBondTokenAndPerformCouponPayment() throws ExecutionException, InterruptedException {
         final Integer totalBankAccount = new Integer("2000000");
@@ -563,12 +560,12 @@ public class FlowTests {
         network.runNetwork();
 
         CordaFuture<Long> fut = citiNode.startFlow(new QueryBondToken.GetTokenBalance(termLinearId));
-        Long citiAmount =  fut.get();
-        assertEquals(150L, citiAmount.longValue());
+        Long citiBondTokens =  fut.get();
+        assertEquals(150L, citiBondTokens.longValue());
 
         fut = hsbcNode.startFlow(new QueryBondToken.GetTokenBalance(termLinearId));
-        Long hsbcAmount = fut.get();
-        assertEquals((500L - 150L), hsbcAmount.longValue());
+        Long hsbcBondTokens = fut.get();
+        assertEquals((500L - 150L), hsbcBondTokens.longValue());
 
 
         BigDecimal totalGsAmount = gsNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("THB")).get();
@@ -599,6 +596,16 @@ public class FlowTests {
             json = jsonArray.getJSONObject(i);
             assertEquals(BondStatus.MATURED.name(), json.getString("bondStatus"));
         }
+
+        // Tokens should be redeemed
+        fut = citiNode.startFlow(new QueryBondToken.GetTokenBalance(termLinearId));
+        citiBondTokens =  fut.get();
+        assertEquals(0, citiBondTokens.longValue());
+
+        fut = hsbcNode.startFlow(new QueryBondToken.GetTokenBalance(termLinearId));
+        hsbcBondTokens = fut.get();
+        assertEquals(0, hsbcBondTokens.longValue());
+
     }
 
 }
