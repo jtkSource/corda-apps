@@ -81,7 +81,7 @@ public class InterBankBondTransferFlow {
                 .Step("Fetch Term States");
 
         private static final ProgressTracker.Step SEND_BOND_TRANSFER_REQUEST = new ProgressTracker
-                .Step("Sending notification Bond holder to transfer bonds ");
+                .Step("Sending notification to Bond holder to transfer bonds ");
         private static final ProgressTracker.Step SEND_CASH = new ProgressTracker
                 .Step("Sending digital currency");
 
@@ -206,6 +206,7 @@ public class InterBankBondTransferFlow {
                 RECEIVE_TERM_STATE,
                 VALIDATE_TERM_AND_BOND_STATE,
                 IDENTIFY_OBSERVERS,
+                IDENTIFY_BOND_OBSERVERS,
                 CREATE_STATES,
                 TRANSFER_TOKENS,
                 SIGNING_TRANSACTIONS,
@@ -222,6 +223,8 @@ public class InterBankBondTransferFlow {
                 .Step("Validating Term and Bond states");
 
         private static final ProgressTracker.Step CREATE_STATES = new ProgressTracker
+                .Step("Creating new Bond States");
+        private static final ProgressTracker.Step IDENTIFY_BOND_OBSERVERS = new ProgressTracker
                 .Step("Creating new Bond States");
 
 
@@ -312,6 +315,7 @@ public class InterBankBondTransferFlow {
                             bondState.getBondName(), bondState.getTermStateLinearID(), new UniqueIdentifier(),
                             bondState.getPaymentFrequencyInMonths(), bondState.getIssueDate(), bondState.getNextCouponDate());
                     TransactionState<BondState> transactionState = new TransactionState<>(newBondState, notary);
+                    progressTracker.setCurrentStep(IDENTIFY_BOND_OBSERVERS);
                     List<Party> bondObservers = new ArrayList<>();
                     bondObservers.addAll(observers);
                     bondObservers.add(bondState.getIssuer());

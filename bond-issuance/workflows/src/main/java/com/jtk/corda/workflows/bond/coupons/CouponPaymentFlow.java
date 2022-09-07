@@ -21,6 +21,7 @@ import net.corda.core.identity.Party;
 import net.corda.core.serialization.ConstructorForDeserialization;
 import net.corda.core.serialization.CordaSerializable;
 import net.corda.core.transactions.SignedTransaction;
+import net.corda.core.utilities.ProgressTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +38,46 @@ public class CouponPaymentFlow extends FlowLogic<String> {
     private static final Logger log = LoggerFactory.getLogger(CouponPaymentFlow.class);
     private final static DateTimeFormatter locateDateformat = DateTimeFormatter.ofPattern("yyyyMMdd");
     private String couponDate;
+
+    private final ProgressTracker progressTracker = new ProgressTracker(
+            FETCH_STATES,
+            CHECK_BOND_FOR_COUPON,
+            IDENTIFY_OBSERVERS,
+            FETCH_BOND_TOKENS_SIZE,
+            CALCULATE_COUPON,
+            SEND_CASH,
+            SIGNING_TRANSACTIONS,
+            UPDATE_STATES,
+            DONE
+    );
+
+    private static final ProgressTracker.Step FETCH_STATES = new ProgressTracker
+            .Step("Fetch Bond States for Coupon payment");
+
+    private static final ProgressTracker.Step CHECK_BOND_FOR_COUPON = new ProgressTracker
+            .Step("Check Bond States for Coupon payment");
+
+    private static final ProgressTracker.Step FETCH_BOND_TOKENS_SIZE = new ProgressTracker
+            .Step("Fetch Bond Tokens size held by Bond Holder");
+
+    private static final ProgressTracker.Step CALCULATE_COUPON = new ProgressTracker
+            .Step("Calculate Coupon Payment");
+
+    private static final ProgressTracker.Step SEND_CASH = new ProgressTracker
+            .Step("Sending digital currency");
+
+    private static final ProgressTracker.Step SIGNING_TRANSACTIONS = new ProgressTracker
+            .Step("Signing Transaction");
+
+    private static final ProgressTracker.Step UPDATE_STATES = new ProgressTracker
+            .Step("Updating Bond States");
+
+    private static final ProgressTracker.Step IDENTIFY_OBSERVERS = new ProgressTracker
+            .Step("Identifying Bond Observers");
+
+    private static final ProgressTracker.Step DONE = new ProgressTracker
+            .Step("Done Processing Flow");
+
     public CouponPaymentFlow(){
         this.couponDate = LocalDate.now().format(locateDateformat);
     }
@@ -49,14 +90,22 @@ public class CouponPaymentFlow extends FlowLogic<String> {
     public String call() throws FlowException {
         Party me = getOurIdentity();
         log.info("Checking coupon payments for {}",me.getName().getCommonName());
+        progressTracker.setCurrentStep(FETCH_STATES);
         List<BondState> bondIssuedByMe = CustomQuery.queryBondsPointerWithCouponDate(couponDate, getServiceHub())
                 .stream()
                 .filter(bondState -> bondState.getIssuer().equals(me))
                 .filter(bondState -> bondState.getBondStatus().equalsIgnoreCase(ACTIVE.name()))
                 .collect(Collectors.toList());
         log.info("Found {} coupons to pay ", bondIssuedByMe.size());
+
+        progressTracker.setCurrentStep(IDENTIFY_OBSERVERS);
+        List<Party> bondObservers = new ArrayList<>(Utility.getLegalIdentitiesByOU
+                (getServiceHub().getIdentityService(), "Observer"));
+        bondObservers.add(me);
+
         for (BondState bs:  bondIssuedByMe){
             if(bs.getCouponPaymentLeft() > 0){
+                progressTracker.setCurrentStep(CHECK_BOND_FOR_COUPON);
                 log.info("Calculating coupon on bondId {}", bs.getLinearId());
                 LocalDate cDate = LocalDate.parse(couponDate, locateDateformat);
                 Party holder = bs.getInvestor();
@@ -74,6 +123,7 @@ public class CouponPaymentFlow extends FlowLogic<String> {
                                 "PENDING",
                                 bondLinearId,
                                 bs.getTermStateLinearID().toString(), false);
+                progressTracker.setCurrentStep(FETCH_BOND_TOKENS_SIZE);
                 Long numberOfTokens = bondHolderSession.sendAndReceive(CouponPaymentNotification.class, couponPaymentNotification)
                         .unwrap(data -> {
                             if (data.status.equals("OK")) {
@@ -82,16 +132,17 @@ public class CouponPaymentFlow extends FlowLogic<String> {
                                 return null;
                             }
                         });
-                //Long bondTokens = subFlow(new QueryBondToken.GetTokenBalance(couponPaymentNotification.getBondLinearID()));
                 if(numberOfTokens == null){
-                    // check if number of tokens match ?
                     throw new FlowException("Something went wrong with Coupon payment");
                 }
                 //Coupon payment = parvalue * (annual coupon rate / number of payments per year)
+                progressTracker.setCurrentStep(CALCULATE_COUPON);
                 int paymentsPerYear = 12 / bs.getPaymentFrequencyInMonths();
                 double coupon = (parValue * (bs.getInterestRate() / paymentsPerYear)) * numberOfTokens;
                 log.info("{}$ Coupon to be send to bond holder", coupon);
 
+                progressTracker.setCurrentStep(SEND_CASH);
+                progressTracker.setCurrentStep(SIGNING_TRANSACTIONS);
                 SignedTransaction tStxTran = subFlow(
                         new TransferTokenFlow.
                                 TransferTokenInitiator(String.valueOf(coupon), bs.getCurrency(), bs.getInvestor()));
@@ -109,6 +160,7 @@ public class CouponPaymentFlow extends FlowLogic<String> {
                     nCouponDate = couponDate;
                 }
                 long couponPaymentLeft = bs.getCouponPaymentLeft() - 1;
+                progressTracker.setCurrentStep(UPDATE_STATES);
                 BondState newBondState = new BondState(
                         me, bs.getInvestor(), bs.getInterestRate(),bs.getParValue(),
                         bs.getMaturityDate(), bs.getCreditRating(), couponPaymentLeft,
@@ -116,8 +168,7 @@ public class CouponPaymentFlow extends FlowLogic<String> {
                         bs.getBondName(), bs.getTermStateLinearID(),bs.getLinearId(),
                         bs.getPaymentFrequencyInMonths(), bs.getIssueDate(), nCouponDate);
 
-                List<Party> bondObservers = new ArrayList<>(Utility.getLegalIdentitiesByOU
-                        (getServiceHub().getIdentityService(), "Observer"));
+                progressTracker.setCurrentStep(SIGNING_TRANSACTIONS);
                 SignedTransaction txId = subFlow(new UpdateEvolvableToken(oldBondStateAndRef, newBondState, bondObservers));
                 log.info("BondState has been updated with nextCouponDate:{},couponPaymentLeft:{}  after coupon payment TxID: {}",
                         nCouponDate,
