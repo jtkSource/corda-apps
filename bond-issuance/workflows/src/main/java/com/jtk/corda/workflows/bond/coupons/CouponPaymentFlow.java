@@ -182,7 +182,7 @@ public class CouponPaymentFlow extends FlowLogic<String> {
                 log.info("No coupon left to pay pn bondId {}", bs.getLinearId());
             }
         }
-
+        progressTracker.setCurrentStep(DONE);
         return String.format("{ " +
                         "\"issuer\":\"%s\"," +
                         "\"couponDate\":\"%s\"" +
