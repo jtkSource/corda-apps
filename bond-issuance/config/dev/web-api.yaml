@@ -236,6 +236,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/messageStatusCode'
+  /corda/cash:
+    get:
+      summary: Get cash tokens
+      operationId: get-cash-tokens
+      tags:
+        - corda
+        - query-cash-tokens
+      responses:
+        '200':
+          description: Retrieve the total tokens on this bond
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: number
+        '500':
+          description: The request has been accepted for processing, but the processing has not been completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/messageStatusCode'
   /corda/cash/issue:
     post:
       summary: POST API to create money in the central bank

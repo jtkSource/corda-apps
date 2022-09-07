@@ -114,6 +114,13 @@ public class HandlerFactory {
                     vertx.eventBus()
                             .request("CORDA-API",cashJson, handleCordaAPI(routingContext));
                 });
+        routerBuilder.operation("get-cash-tokens")
+                .handler(routingContext -> {
+                    JsonObject msg = new JsonObject();
+                    msg.put("url","get-cash-tokens");
+                    vertx.eventBus()
+                            .request("CORDA-API",msg, handleCordaAPI(routingContext));
+                });
 
 
     }
@@ -135,7 +142,8 @@ public class HandlerFactory {
 
             } else {
                 log.error("Error response from corda");
-                routingContext.response()
+                routingContext
+                        .response()
                         .setStatusCode(HttpResponseStatus.INTERNAL_SERVER_ERROR.code())
                         .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                         .end("{'msg':'Record not found','code':" + HttpResponseStatus.INTERNAL_SERVER_ERROR.code() + "}");

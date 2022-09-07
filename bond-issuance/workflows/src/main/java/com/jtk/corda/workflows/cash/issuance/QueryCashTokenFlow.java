@@ -15,6 +15,7 @@ import net.corda.core.utilities.ProgressTracker;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class QueryCashTokenFlow {
 
@@ -42,6 +43,22 @@ public class QueryCashTokenFlow {
                 Amount<TokenType> bondTokenAmount = QueryUtilities.tokenBalance(getServiceHub().getVaultService(), cashPointer);
                 return BigDecimal.valueOf((bondTokenAmount.getQuantity() * bondTokenAmount.getDisplayTokenSize().doubleValue()));
             } else return ZERO;
+        }
+    }
+
+    @InitiatingFlow
+    @StartableByRPC
+    public static class GetAllCashTokens extends FlowLogic<List<CashState>> {
+        public GetAllCashTokens() {}
+
+        @Override
+        @Suspendable
+        public List<CashState> call() throws FlowException {
+            return getServiceHub().getVaultService().queryBy(CashState.class).getStates()
+                    .stream()
+                    .map(sr -> sr.getState().getData().toPointer(CashState.class))
+                    .map(p -> p.getPointer().resolve(getServiceHub()).getState().getData())
+                    .collect(Collectors.toList());
         }
     }
 

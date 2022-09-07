@@ -1,12 +1,14 @@
 package com.jtk.bonds.issuance.cordapp.client.verticle;
 
 import com.jtk.bonds.issuance.cordapp.client.utils.NodeRPCConnection;
+import com.jtk.corda.states.cash.issuance.CashState;
 import com.jtk.corda.workflows.bond.coupons.CouponPaymentFlow;
 import com.jtk.corda.workflows.bond.coupons.StartCouponPaymentFlow;
 import com.jtk.corda.workflows.bond.issuance.*;
 import com.jtk.corda.workflows.cash.issuance.CreateCashFlow;
 import com.jtk.corda.workflows.cash.issuance.QueryCashTokenFlow;
 import com.jtk.corda.workflows.cash.issuance.TransferTokenFlow;
+import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -14,6 +16,7 @@ import io.vertx.core.WorkerExecutor;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import net.corda.core.contracts.ContractState;
+import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
@@ -102,7 +105,23 @@ public class CordaVerticle extends AbstractVerticle {
                                 responseJson.put("msg", whoami());
                                 break;
                             case "states":
-                                responseJson.put("msg", nodeRPC.proxy().vaultQuery(ContractState.class).getStates().toString());
+                                List<String> listOfStates = nodeRPC.proxy().vaultQuery(ContractState.class).getStates()
+                                        .stream().map(contractStateStateAndRef -> contractStateStateAndRef.getState().getData())
+                                        .map(contractState -> {
+                                            if (contractState instanceof FungibleToken) {
+                                                FungibleToken ft = (FungibleToken) contractState;
+                                                return new JsonObject()
+                                                        .put("amount", ft.getAmount().getQuantity())
+                                                        .put("holder", ft.getHolder().toString())
+                                                        .put("tokenType", ft.getTokenType().getTokenClass().getName())
+                                                        .put("issuer", ft.getIssuer().toString())
+                                                        .toString();
+                                            } else {
+                                                return contractState.toString();
+                                            }
+                                        })
+                                        .collect(Collectors.toList());
+                                responseJson.put("msg", listOfStates.toString());
                                 break;
                             case "issue-bond-terms":
                                 try {
@@ -261,6 +280,18 @@ public class CordaVerticle extends AbstractVerticle {
                                     e1.fail(e);
                                     return;
                                 } catch (ExecutionException e) {
+                                    log.error("Exception query Corda", e);
+                                    e1.fail(e);
+                                    return;
+                                }
+                                break;
+                            case "get-cash-tokens":
+                                try{
+                                    List<CashState> listOfCash = nodeRPC.proxy()
+                                            .startTrackedFlowDynamic(QueryCashTokenFlow.GetAllCashTokens.class)
+                                            .getReturnValue().get();
+                                    responseJson.put("msg", listOfCash.toString());
+                                }catch (Exception e){
                                     log.error("Exception query Corda", e);
                                     e1.fail(e);
                                     return;

@@ -79,7 +79,15 @@ Content-Type: application/json
 GET http://{{host}}:{{port}}/corda/bonds/tokens/687dca98-2463-4900-b0e8-f9c55ad34b35
 Content-Type: application/json
 
-###
+### Pay Coupon payment
+POST http://{{host}}:{{port}}/corda/bond/coupon/payment
+Content-Type: application/json
+
+{
+  "couponDate": "20230210"
+}
+
+### Create Cash (used by CB)
 POST http://{{host}}:{{port}}/corda/cash/issue
 Content-Type: application/json
 
@@ -89,16 +97,19 @@ Content-Type: application/json
   "usdRate": 1.0
 }
 
-###
+### Query Cash By Currency
 POST http://{{host}}:{{port}}/corda/cash/query
 Content-Type: application/json
 
 {
   "queryType": "byCurrencyCode",
-  "queryValue": "USD"
+  "queryValue": "AED"
 }
 
-###
+### Query All Cash on the Node
+GET http://{{host}}:{{port}}/corda/cash
+
+### Transfer Cash to particular node
 POST http://{{host}}:{{port}}/corda/cash/transfer
 Content-Type: application/json
 
@@ -106,40 +117,4 @@ Content-Type: application/json
   "amount": "15000000",
   "currencyCode": "USD",
   "recipient": "Goldman Sachs"
-}
-
-###
-POST http://{{host}}:{{port}}/corda/cash/transfer
-Content-Type: application/json
-
-{
-  "amount": "2000000",
-  "currencyCode": "USD",
-  "recipient": "Citi Bank"
-}
-
-###
-POST http://{{host}}:{{port}}/corda/cash/transfer
-Content-Type: application/json
-
-{
-  "amount": "3000000",
-  "currencyCode": "USD",
-  "recipient": "HSBC"
-}
-
-###
-POST http://{{host}}:{{port}}/corda/bond/coupon/schedule
-Content-Type: application/json
-
-{
-  "schedulePeriodInSeconds": 30
-}
-
-###
-POST http://{{host}}:{{port}}/corda/bond/coupon/payment
-Content-Type: application/json
-
-{
-  "couponDate": "20230210"
 }
