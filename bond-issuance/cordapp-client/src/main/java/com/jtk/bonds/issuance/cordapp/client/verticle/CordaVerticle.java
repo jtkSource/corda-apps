@@ -3,6 +3,7 @@ package com.jtk.bonds.issuance.cordapp.client.verticle;
 import com.jtk.bonds.issuance.cordapp.client.utils.NodeRPCConnection;
 import com.jtk.corda.states.cash.issuance.CashState;
 import com.jtk.corda.workflows.bond.coupons.CouponPaymentFlow;
+import com.jtk.corda.workflows.bond.coupons.RedeemCouponPaymentFlow;
 import com.jtk.corda.workflows.bond.coupons.StartCouponPaymentFlow;
 import com.jtk.corda.workflows.bond.issuance.*;
 import com.jtk.corda.workflows.cash.issuance.CreateCashFlow;
@@ -199,7 +200,7 @@ public class CordaVerticle extends AbstractVerticle {
                                             .getReturnValue().get();
                                     String response = returnMsg;
                                     responseJson.put("msg", response);
-                                }catch (InterruptedException e) {
+                                } catch (InterruptedException e) {
                                     log.error("Exception query Corda", e);
                                     e1.fail(e);
                                     return;
@@ -219,7 +220,7 @@ public class CordaVerticle extends AbstractVerticle {
                                             .getReturnValue().get();
                                     String response = returnMsg.split(">")[1];
                                     responseJson.put("msg", response);
-                                }catch (InterruptedException e) {
+                                } catch (InterruptedException e) {
                                     log.error("Exception query Corda", e);
                                     e1.fail(e);
                                     return;
@@ -232,30 +233,30 @@ public class CordaVerticle extends AbstractVerticle {
                             case "transfer-cash":
                                 try {
                                     String recipient = json.getString("recipient");
-                                    log.info("Recipient: [{}] ",recipient);
+                                    log.info("Recipient: [{}] ", recipient);
 
                                     Party partyRecipient = nodeRPC.proxy().networkMapSnapshot().stream()
                                             .filter(el -> !isNotary(el) && !isMe(el) && !isNetworkMap(el))
                                             .flatMap(el -> el.getLegalIdentities().stream())
                                             .filter(party -> {
-                                                log.info("Party: [{}] ",party.getName().getCommonName());
+                                                log.info("Party: [{}] ", party.getName().getCommonName());
                                                 return party.getName().getCommonName().equals(recipient);
                                             })
                                             .findAny().orElse(null);
-                                    String response = String.format("{\"msg\":\"%s not found\"}",recipient);
+                                    String response = String.format("{\"msg\":\"%s not found\"}", recipient);
 
-                                    if(partyRecipient != null){
+                                    if (partyRecipient != null) {
                                         SignedTransaction returnMsg = nodeRPC.proxy().startTrackedFlowDynamic(TransferTokenFlow.TransferTokenInitiator.class,
                                                         json.getString("amount"),
                                                         json.getString("currencyCode"),
                                                         partyRecipient
                                                 )
                                                 .getReturnValue().get();
-                                        response = String.format("{\"transactionId\":\"%s\"}",returnMsg.getId().toHexString());
+                                        response = String.format("{\"transactionId\":\"%s\"}", returnMsg.getId().toHexString());
                                     }
                                     responseJson.put("msg", response);
 
-                                }catch (InterruptedException e) {
+                                } catch (InterruptedException e) {
                                     log.error("Exception query Corda", e);
                                     e1.fail(e);
                                     return;
@@ -275,7 +276,7 @@ public class CordaVerticle extends AbstractVerticle {
                                             .getReturnValue().get();
                                     String response = String.format("{\"msg\":\"coupon schedule started\"}");
                                     responseJson.put("msg", response);
-                                }catch (InterruptedException e) {
+                                } catch (InterruptedException e) {
                                     log.error("Exception query Corda", e);
                                     e1.fail(e);
                                     return;
@@ -285,13 +286,37 @@ public class CordaVerticle extends AbstractVerticle {
                                     return;
                                 }
                                 break;
+                            case "bond-early-redemption":
+                                try {
+                                    String redeemJson = nodeRPC.proxy().startTrackedFlowDynamic(
+                                                    RedeemCouponPaymentFlow.RedeemCouponInitiator.class, json.getString("termId"), true)
+                                            .getReturnValue().get();
+                                    responseJson.put("msg", redeemJson);
+                                } catch (Exception e) {
+                                    log.error("Exception query Corda", e);
+                                    e1.fail(e);
+                                    return;
+                                }
+                                break;
+                            case "bond-redemption":
+                                try {
+                                    String redeemJson = nodeRPC.proxy().startTrackedFlowDynamic(
+                                                    RedeemCouponPaymentFlow.RedeemCouponInitiator.class, json.getString("maturityDate"))
+                                            .getReturnValue().get();
+                                    responseJson.put("msg", redeemJson);
+                                } catch (Exception e) {
+                                    log.error("Exception query Corda", e);
+                                    e1.fail(e);
+                                    return;
+                                }
+                                break;
                             case "get-cash-tokens":
-                                try{
+                                try {
                                     List<CashState> listOfCash = nodeRPC.proxy()
                                             .startTrackedFlowDynamic(QueryCashTokenFlow.GetAllCashTokens.class)
                                             .getReturnValue().get();
                                     responseJson.put("msg", listOfCash.toString());
-                                }catch (Exception e){
+                                } catch (Exception e) {
                                     log.error("Exception query Corda", e);
                                     e1.fail(e);
                                     return;

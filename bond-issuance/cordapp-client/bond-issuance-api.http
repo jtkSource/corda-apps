@@ -22,71 +22,73 @@ GET http://{{host}}:{{port}}/corda/me
 ###
 GET http://{{host}}:{{port}}/corda/states
 
-###
+### Create Term
 POST http://{{host}}:{{port}}/corda/terms/issue
 Content-Type: application/json
 
 {
-  "bondName": "GS-30Y-TB-USD",
-  "interestRate": 12.0,
-  "parValue": 1000,
-  "unitsAvailable": 500,
-  "maturityDate": "20320810",
+  "bondName": "GS-30Y-TB-NY",
+  "interestRate": 1.2,
+  "parValue": 200,
+  "unitsAvailable": 1200,
+  "maturityDate": "20320907",
   "bondType": "TB",
   "currency": "USD",
   "creditRating": "AAA",
-  "paymentFrequencyInMonths": 6
+  "paymentFrequencyInMonths": 4
 }
 
 
-###
+### Query Terms
 POST http://{{host}}:{{port}}/corda/terms/query
 Content-Type: application/json
 
 {
-  "queryType": "greaterThanMaturityDate",
-  "queryValue": "20220812"
+  "queryType": "lessThanMaturityDate",
+  "queryValue": "20420101"
 }
 
-###
+### Issue Bonds
 POST http://{{host}}:{{port}}/corda/bonds/issue
 Content-Type: application/json
 
 {
-  "teamStateLinearID": "687dca98-2463-4900-b0e8-f9c55ad34b35",
-  "unitsOfBonds": 100
+  "teamStateLinearID": "e0ed4ee6-ea6a-4abc-9f73-bb5823da21ac",
+  "unitsOfBonds": 56
 }
 
-###
-POST http://{{host}}:{{port}}/corda/bonds/query
-Content-Type: application/json
+### Query Bonds
 
-{
-  "queryType": "greaterThanMaturityDate",
-  "queryValue": "20220812"
-}
-
-###
+### Query Bonds by termId
 POST http://{{host}}:{{port}}/corda/bonds/query
 Content-Type: application/json
 
 {
   "queryType": "byTermStateLinearID",
-  "queryValue": "a7ffd03a-4ba6-496a-8130-fbea8f779c0e"
+  "queryValue": "e0ed4ee6-ea6a-4abc-9f73-bb5823da21ac"
 }
 
-###
-GET http://{{host}}:{{port}}/corda/bonds/tokens/687dca98-2463-4900-b0e8-f9c55ad34b35
+### Query Bond Tokens by TermId
+GET http://{{host}}:{{port}}/corda/bonds/tokens/e0ed4ee6-ea6a-4abc-9f73-bb5823da21ac
 Content-Type: application/json
 
-### Pay Coupon payment
+### Coupon payment
 POST http://{{host}}:{{port}}/corda/bond/coupon/payment
 Content-Type: application/json
 
 {
-  "couponDate": "20230210"
+  "couponDate": "20220907"
 }
 
+### Early Redemption
+POST http://{{host}}:{{port}}/corda/bond/redeem/early
+Content-Type: application/json
+
+{
+  "termId": "e0ed4ee6-ea6a-4abc-9f73-bb5823da21ac"
+}
+
+### CASH
 ### Create Cash (used by CB)
 POST http://{{host}}:{{port}}/corda/cash/issue
 Content-Type: application/json
@@ -103,7 +105,7 @@ Content-Type: application/json
 
 {
   "queryType": "byCurrencyCode",
-  "queryValue": "AED"
+  "queryValue": "USD"
 }
 
 ### Query All Cash on the Node
@@ -114,7 +116,7 @@ POST http://{{host}}:{{port}}/corda/cash/transfer
 Content-Type: application/json
 
 {
-  "amount": "15000000",
+  "amount": "1000000000",
   "currencyCode": "USD",
   "recipient": "Goldman Sachs"
 }

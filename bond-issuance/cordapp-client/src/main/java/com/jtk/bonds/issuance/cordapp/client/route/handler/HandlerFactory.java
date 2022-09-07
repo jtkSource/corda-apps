@@ -106,20 +106,28 @@ public class HandlerFactory {
                     vertx.eventBus()
                             .request("CORDA-API",cashJson, handleCordaAPI(routingContext));
                 });
-        routerBuilder.operation("bond-coupon-schedule")
-                .handler(routingContext -> {
-                    RequestParameters params = routingContext.get("parsedParameters");
-                    JsonObject cashJson = params.body().getJsonObject();
-                    cashJson.put("url","bond-coupon-schedule");
-                    vertx.eventBus()
-                            .request("CORDA-API",cashJson, handleCordaAPI(routingContext));
-                });
         routerBuilder.operation("get-cash-tokens")
                 .handler(routingContext -> {
                     JsonObject msg = new JsonObject();
                     msg.put("url","get-cash-tokens");
                     vertx.eventBus()
                             .request("CORDA-API",msg, handleCordaAPI(routingContext));
+                });
+        routerBuilder.operation("bond-early-redemption")
+                .handler(routingContext -> {
+                    RequestParameters params = routingContext.get("parsedParameters");
+                    JsonObject redeemEarlyJson = params.body().getJsonObject();
+                    redeemEarlyJson.put("url","bond-early-redemption");
+                    vertx.eventBus()
+                            .request("CORDA-API",redeemEarlyJson, handleCordaAPI(routingContext));
+                });
+        routerBuilder.operation("bond-redemption")
+                .handler(routingContext -> {
+                    RequestParameters params = routingContext.get("parsedParameters");
+                    JsonObject redeemJson = params.body().getJsonObject();
+                    redeemJson.put("url","bond-redemption");
+                    vertx.eventBus()
+                            .request("CORDA-API",redeemJson, handleCordaAPI(routingContext));
                 });
 
 

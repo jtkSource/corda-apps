@@ -78,10 +78,6 @@ public class CouponPaymentFlow extends FlowLogic<String> {
     private static final ProgressTracker.Step DONE = new ProgressTracker
             .Step("Done Processing Flow");
 
-    public CouponPaymentFlow(){
-        this.couponDate = LocalDate.now().format(locateDateformat);
-    }
-
     public CouponPaymentFlow(String couponDate){
         this.couponDate = couponDate;
     }
@@ -89,7 +85,7 @@ public class CouponPaymentFlow extends FlowLogic<String> {
     @Suspendable
     public String call() throws FlowException {
         Party me = getOurIdentity();
-        log.info("Checking coupon payments for {}",me.getName().getCommonName());
+        log.info("Checking coupon payments for {} on couponDate {}",me.getName().getCommonName(), couponDate);
         progressTracker.setCurrentStep(FETCH_STATES);
         List<BondState> bondIssuedByMe = CustomQuery.queryBondsPointerWithCouponDate(couponDate, getServiceHub())
                 .stream()

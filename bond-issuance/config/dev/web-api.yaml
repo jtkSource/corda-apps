@@ -236,6 +236,71 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/messageStatusCode'
+  /corda/bond/redeem/early:
+    post:
+      summary: POST API to Early redemption of bonds
+      operationId: bond-early-redemption
+      tags:
+        - corda
+        - bond-redeem-early
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                termId:
+                  type: string
+      responses:
+        '200':
+          description: Response for coupon payment
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+        '500':
+          description: The request has been accepted for processing, but the processing has not been completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/messageStatusCode'
+  /corda/bond/redeem:
+    post:
+      summary: POST API to redemption of bonds
+      operationId: bond-redemption
+      tags:
+        - corda
+        - bond-redeem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                maturityDate:
+                  type: string
+      responses:
+        '200':
+          description: Response for coupon payment
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+        '500':
+          description: The request has been accepted for processing, but the processing has not been completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/messageStatusCode'
+
   /corda/cash:
     get:
       summary: Get cash tokens
@@ -367,38 +432,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/messageStatusCode'
-  /corda/bond/coupon/schedule:
-    post:
-      summary: API to start the coupon scheduler on a node. This will check for all bonds issued by this node and pay coupons as per coupon schedule
-      operationId: bond-coupon-schedule
-      tags:
-        - corda
-        - bond-coupon
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                schedulePeriodInSeconds:
-                  type: integer
-      responses:
-        '200':
-          description: Response for coupon payment
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  msg:
-                    type: string
-        '500':
-          description: The request has been accepted for processing, but the processing has not been completed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/messageStatusCode'
+
 components:
   schemas:
     termRequest:
