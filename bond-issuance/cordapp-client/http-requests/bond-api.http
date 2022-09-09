@@ -17,6 +17,16 @@ Content-Type: application/json
   "queryType": "greaterThanMaturityDate",
   "queryValue": "20220909"
 }
+### Query NonActive Bonds
+
+POST http://{{host}}:{{port}}/corda/bonds/query
+Content-Type: application/json
+
+{
+  "queryType": "notActiveBonds",
+  "queryValue": ""
+}
+
 
 ### Query Bond Tokens by TermId
 GET http://{{host}}:{{port}}/corda/bonds/tokens/e0ed4ee6-ea6a-4abc-9f73-bb5823da21ac
