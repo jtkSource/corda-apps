@@ -20,8 +20,8 @@ POST http://{{host}}:{{port}}/corda/terms/query
 Content-Type: application/json
 
 {
-  "queryType": "lessThanMaturityDate",
-  "queryValue": "20420101"
+  "queryType": "greaterThanMaturityDate",
+  "queryValue": "20220909"
 }
 
 ### Query Non Terms
