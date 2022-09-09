@@ -1,0 +1,25 @@
+### Create Term
+POST http://{{host}}:{{port}}/corda/terms/issue
+Content-Type: application/json
+
+{
+  "bondName": "GS-30Y-TB-NY",
+  "interestRate": 1.2,
+  "parValue": 200,
+  "unitsAvailable": 1200,
+  "maturityDate": "20320907",
+  "bondType": "TB",
+  "currency": "USD",
+  "creditRating": "AAA",
+  "paymentFrequencyInMonths": 4
+}
+
+
+### Query Terms
+POST http://{{host}}:{{port}}/corda/terms/query
+Content-Type: application/json
+
+{
+  "queryType": "lessThanMaturityDate",
+  "queryValue": "20420101"
+}

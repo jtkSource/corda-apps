@@ -1,0 +1,15 @@
+### Coupon payment
+POST http://{{host}}:{{port}}/corda/bond/coupon/payment
+Content-Type: application/json
+
+{
+  "couponDate": "20220907"
+}
+
+### Early Redemption
+POST http://{{host}}:{{port}}/corda/bond/redeem/early
+Content-Type: application/json
+
+{
+  "termId": "e0ed4ee6-ea6a-4abc-9f73-bb5823da21ac"
+}

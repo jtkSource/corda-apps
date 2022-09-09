@@ -1,0 +1,23 @@
+### Get node address
+GET http://{{host}}:{{port}}/corda/addresses
+
+### Get Identities on the network
+GET http://{{host}}:{{port}}/corda/identities
+
+### Get platform version
+GET http://{{host}}:{{port}}/corda/platformversion
+
+### Get node peers
+GET http://{{host}}:{{port}}/corda/peers
+
+### Get node notaries
+GET http://{{host}}:{{port}}/corda/notaries
+
+### Get node flows
+GET http://{{host}}:{{port}}/corda/flows
+
+### Get Identity of node
+GET http://{{host}}:{{port}}/corda/me
+
+### Get Contract States on the node
+GET http://{{host}}:{{port}}/corda/states

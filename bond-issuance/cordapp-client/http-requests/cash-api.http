@@ -1,0 +1,33 @@
+### CASH
+
+### Query All CashStates on the Node
+GET http://{{host}}:{{port}}/corda/cash
+
+### Create Cash (used by CB)
+POST http://{{host}}:{{port}}/corda/cash/issue
+Content-Type: application/json
+
+{
+  "amount": "10000000000",
+  "currencyCode": "USD",
+  "usdRate": 1.0
+}
+
+### Query Cash By Currency
+POST http://{{host}}:{{port}}/corda/cash/query
+Content-Type: application/json
+
+{
+  "queryType": "byCurrencyCode",
+  "queryValue": "AED"
+}
+
+### Transfer Cash to particular node
+POST http://{{host}}:{{port}}/corda/cash/transfer
+Content-Type: application/json
+
+{
+  "amount": "1000000000",
+  "currencyCode": "USD",
+  "recipient": "Goldman Sachs"
+}

@@ -1,0 +1,23 @@
+### Issue Bonds
+POST http://{{host}}:{{port}}/corda/bonds/issue
+Content-Type: application/json
+
+{
+  "teamStateLinearID": "e0ed4ee6-ea6a-4abc-9f73-bb5823da21ac",
+  "unitsOfBonds": 56
+}
+
+### Query Bonds
+
+### Query Bonds by termId
+POST http://{{host}}:{{port}}/corda/bonds/query
+Content-Type: application/json
+
+{
+  "queryType": "greaterThanMaturityDate",
+  "queryValue": "20220909"
+}
+
+### Query Bond Tokens by TermId
+GET http://{{host}}:{{port}}/corda/bonds/tokens/e0ed4ee6-ea6a-4abc-9f73-bb5823da21ac
+Content-Type: application/json
