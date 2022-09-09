@@ -19,7 +19,7 @@ Content-Type: application/json
 
 {
   "queryType": "byCurrencyCode",
-  "queryValue": "AED"
+  "queryValue": "USD"
 }
 
 ### Transfer Cash to particular node
