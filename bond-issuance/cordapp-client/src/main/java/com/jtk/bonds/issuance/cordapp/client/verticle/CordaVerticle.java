@@ -494,6 +494,17 @@ public class CordaVerticle extends AbstractVerticle {
                     log.error("Exception query Corda", e);
                 }
                 responseJson.put("msg", jsonResponse);
+            }else if (qType.equalsIgnoreCase("notActiveBonds")) {
+                try {
+                    jsonResponse = nodeRPC.proxy().startTrackedFlowDynamic
+                            (QueryBondsFlow.GetNotActiveBonds.class)
+                            .getReturnValue().get();
+                } catch (InterruptedException e) {
+                    log.error("Exception query Corda", e);
+                } catch (ExecutionException e) {
+                    log.error("Exception query Corda", e);
+                }
+                responseJson.put("msg", jsonResponse);
             }
         }
 

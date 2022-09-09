@@ -5,6 +5,7 @@ info:
 servers:
   - url: http://localhost:9091
 paths:
+  ## Node API
   /corda/{apiId}:
     get:
       summary: get the address for the corda nodes
@@ -34,6 +35,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/messageStatusCode'
+
+  ## Terms API
   /corda/terms/issue:
     post:
       summary: Create Bond Term
@@ -100,6 +103,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/messageStatusCode'
+
+  ## Bonds API
   /corda/bonds/issue:
     post:
       summary: POST API to issue bond
@@ -156,6 +161,7 @@ paths:
                     - lessThanMaturityDate
                     - greaterThanMaturityDate
                     - byTermStateLinearID
+                    - notActiveBonds
                 queryValue:
                   type: string
       responses:
@@ -204,6 +210,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/messageStatusCode'
+
+  ## Coupon and Redemption API
   /corda/bond/coupon/payment:
     post:
       summary: POST API to pay coupons to various holders of the bond
@@ -301,6 +309,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/messageStatusCode'
 
+  ## CASH API
   /corda/cash:
     get:
       summary: Get cash tokens

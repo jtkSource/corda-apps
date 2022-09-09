@@ -102,7 +102,7 @@ public class CustomQuery {
                 .collect(Collectors.toList());
     }
 
-    public static List<BondState> queryInActiveBondByTermStateLinearID(UniqueIdentifier uniqueIdentifier, ServiceHub serviceHub) {
+    public static List<BondState> queryAllNotActiveBond(UniqueIdentifier uniqueIdentifier, ServiceHub serviceHub) {
         List<StateAndRef<BondState>> statesAndRef = serviceHub.getVaultService().queryBy(BondState.class).getStates();
         return statesAndRef.stream()
                 .map(sr->sr.getState().getData().toPointer(BondState.class))
@@ -112,6 +112,14 @@ public class CustomQuery {
                 .collect(Collectors.toList());
     }
 
+    public static List<BondState> queryAllNotActiveBond(ServiceHub serviceHub) {
+        List<StateAndRef<BondState>> statesAndRef = serviceHub.getVaultService().queryBy(BondState.class).getStates();
+        return statesAndRef.stream()
+                .map(sr->sr.getState().getData().toPointer(BondState.class))
+                .map(p->p.getPointer().resolve(serviceHub).getState().getData())
+                .filter(ts-> !ts.getBondStatus().equals(BondStatus.ACTIVE.name()))
+                .collect(Collectors.toList());
+    }
 
     public static StateAndRef<BondState> queryBondByLinearID(UniqueIdentifier bondStateLinearID, ServiceHub serviceHub) {
         List<StateAndRef<BondState>> statesAndRef = serviceHub.getVaultService().queryBy(BondState.class).getStates();
@@ -205,4 +213,5 @@ public class CustomQuery {
                 .filter(cashState-> cashState.getCurrencyCode().equals(currencyCode))
                 .collect(Collectors.toList());
     }
+
 }

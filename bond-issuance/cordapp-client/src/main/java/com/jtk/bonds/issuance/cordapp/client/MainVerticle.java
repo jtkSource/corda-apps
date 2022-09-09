@@ -57,7 +57,7 @@ public class MainVerticle extends AbstractVerticle {
                   if(result.succeeded()) {
                     log.info("Completed all verticles !!! ");
                     log.info("deployments:[{}]", deploymentMap);
-
+                    log.info("Started server for node: {}", NODE.toUpperCase());
                     startPromise.complete();
                   }else {
                     log.error("Error deploying Verticles...");

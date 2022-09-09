@@ -53,7 +53,7 @@ public class QueryBondsFlow {
         @Override
         @Suspendable
         public String call() {
-            return CustomQuery.queryInActiveBondByTermStateLinearID(teamStateLinearID, getServiceHub())
+            return CustomQuery.queryAllNotActiveBond(teamStateLinearID, getServiceHub())
                     .stream()
                     .map(BondState::toJson)
                     .collect(Collectors.toList())
@@ -123,13 +123,32 @@ public class QueryBondsFlow {
         @Override
         @Suspendable
         public String call() {
-            return CustomQuery.queryBondsPointerGreaterThanMaturityDate(maturityDate, getServiceHub())
+            return CustomQuery.queryBondsPointerEqualMaturityDate(maturityDate, getServiceHub())
                     .stream().map(BondState::toJson)
                     .collect(Collectors.toList())
                     .toString();
         }
     }
 
+    @InitiatingFlow
+    @StartableByRPC
+    public static class GetNotActiveBonds extends FlowLogic<String>{
+        private final ProgressTracker progressTracker = new ProgressTracker();
+
+        public GetNotActiveBonds() {}
+        @Override
+        public ProgressTracker getProgressTracker() {
+            return progressTracker;
+        }
+        @Override
+        @Suspendable
+        public String call() {
+            return CustomQuery.queryAllNotActiveBond(getServiceHub())
+                    .stream().map(BondState::toJson)
+                    .collect(Collectors.toList())
+                    .toString();
+        }
+    }
 
     @InitiatingFlow
     @StartableByRPC
