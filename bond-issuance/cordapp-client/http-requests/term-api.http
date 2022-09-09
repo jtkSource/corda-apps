@@ -23,3 +23,12 @@ Content-Type: application/json
   "queryType": "lessThanMaturityDate",
   "queryValue": "20420101"
 }
+
+### Query Non Terms
+POST http://{{host}}:{{port}}/corda/terms/query
+Content-Type: application/json
+
+{
+  "queryType": "notActiveBonds",
+  "queryValue": ""
+}
