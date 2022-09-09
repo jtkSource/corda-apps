@@ -85,6 +85,7 @@ paths:
                     - lessThanMaturityDate
                     - greaterThanMaturityDate
                     - byTermStateLinearID
+                    - notActiveBonds
                 queryValue:
                   type: string
       responses:

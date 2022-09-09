@@ -585,7 +585,7 @@ public class FlowTests {
         totalWithCoupon = citiNode.startFlow(new QueryCashTokenFlow.GetTokenBalance("THB")).get();
         assertEquals(totalCitiAmount.doubleValue() + (coupon), totalWithCoupon.doubleValue(),0.01); // because the fractionDigits is 2 for currencies
 
-        CordaFuture<String> terms = gsNode.startFlow(new QueryBondTermsFlow.GetInActiveBondTermByTermStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId)));
+        CordaFuture<String> terms = gsNode.startFlow(new QueryBondTermsFlow.GetNotActiveBondTermByTermStateLinearID(UniqueIdentifier.Companion.fromString(termLinearId)));
         response = terms.get();
         json = (JSONObject) new JSONTokener(response).nextValue();
         assertEquals(BondStatus.MATURED.name(), json.getString("bondStatus"));

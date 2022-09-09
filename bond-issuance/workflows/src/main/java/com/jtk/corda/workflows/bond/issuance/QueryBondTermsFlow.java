@@ -134,11 +134,11 @@ public class QueryBondTermsFlow {
 
     @InitiatingFlow
     @StartableByRPC
-    public static class GetInActiveBondTermByTermStateLinearID extends FlowLogic<String>{
+    public static class GetNotActiveBondTermByTermStateLinearID extends FlowLogic<String>{
         private final ProgressTracker progressTracker = new ProgressTracker();
         private final UniqueIdentifier teamStateLinearID;
 
-        public GetInActiveBondTermByTermStateLinearID(UniqueIdentifier teamStateLinearID) {
+        public GetNotActiveBondTermByTermStateLinearID(UniqueIdentifier teamStateLinearID) {
             this.teamStateLinearID = teamStateLinearID;
         }
         @Override
@@ -148,7 +148,28 @@ public class QueryBondTermsFlow {
         @Override
         @Suspendable
         public String call() {
-            StateAndRef<TermState> termSateAndRef = CustomQuery.queryInActiveTermsByTermStateLinearID(teamStateLinearID, getServiceHub());
+            StateAndRef<TermState> termSateAndRef = CustomQuery.queryNotActiveTermsByTermStateLinearID(teamStateLinearID, getServiceHub());
+            if(termSateAndRef == null)
+                return "{}";
+            return termSateAndRef.getState().getData().toPointer().getPointer()
+                    .resolve(getServiceHub()).getState().getData().toJson();
+        }
+    }
+
+    @InitiatingFlow
+    @StartableByRPC
+    public static class GetNotActiveBondTerm extends FlowLogic<String>{
+        private final ProgressTracker progressTracker = new ProgressTracker();
+        public GetNotActiveBondTerm() {
+        }
+        @Override
+        public ProgressTracker getProgressTracker() {
+            return progressTracker;
+        }
+        @Override
+        @Suspendable
+        public String call() {
+            StateAndRef<TermState> termSateAndRef = CustomQuery.queryNotActiveTerms(getServiceHub());
             if(termSateAndRef == null)
                 return "{}";
             return termSateAndRef.getState().getData().toPointer().getPointer()

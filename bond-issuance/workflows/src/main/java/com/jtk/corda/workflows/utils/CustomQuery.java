@@ -73,10 +73,18 @@ public class CustomQuery {
                 .orElse(null);
     }
 
-    public static StateAndRef<TermState> queryInActiveTermsByTermStateLinearID(UniqueIdentifier teamStateLinearID, ServiceHub serviceHub) {
+    public static StateAndRef<TermState> queryNotActiveTermsByTermStateLinearID(UniqueIdentifier teamStateLinearID, ServiceHub serviceHub) {
         List<StateAndRef<TermState>> statesAndRef = serviceHub.getVaultService().queryBy(TermState.class).getStates();
         return statesAndRef.stream()
                 .filter(sr -> sr.getState().getData().getLinearId().equals(teamStateLinearID))
+                .filter(sr -> !sr.getState().getData().getBondStatus().equals(BondStatus.ACTIVE.name()))
+                .findAny()
+                .orElse(null);
+    }
+
+    public static StateAndRef<TermState> queryNotActiveTerms(ServiceHub serviceHub) {
+        List<StateAndRef<TermState>> statesAndRef = serviceHub.getVaultService().queryBy(TermState.class).getStates();
+        return statesAndRef.stream()
                 .filter(sr -> !sr.getState().getData().getBondStatus().equals(BondStatus.ACTIVE.name()))
                 .findAny()
                 .orElse(null);
