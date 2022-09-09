@@ -25,6 +25,11 @@ COPY --from=builder /project/cordapp-client/build/libs/cordapp-client-*-all.jar 
 ENTRYPOINT ["sh","-c"]
 CMD ["exec java -jar $APP_JAR $CONFIG_DIR $NODE"]
 
-# docker build -t potholedfern/croda-client:2.0 .
+# docker build -t potholedfern/croda-client:2.2 .
 # docker run -d -e NODE=gs -e PORT=9091 --name gs-node-server --network host potholedfern/croda-client:2.2
-# docker push potholedfern/croda-client:2.0
+# docker run -d -e NODE=hsbc -e PORT=9092 --name hsbc-node-server --network host potholedfern/croda-client:2.2
+# docker run -d -e NODE=citi -e PORT=9095 --name citi-node-server --network host potholedfern/croda-client:2.2
+# docker run -d -e NODE=cb -e PORT=9096 --name cb-node-server --network host potholedfern/croda-client:2.2
+# docker run -d -e NODE=mas -e PORT=9093 --name mas-node-server --network host potholedfern/croda-client:2.2
+# docker run -d -e NODE=sgx -e PORT=9094 --name sgx-node-server --network host potholedfern/croda-client:2.2
+# docker push potholedfern/croda-client:2.2
